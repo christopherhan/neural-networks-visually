@@ -34,8 +34,10 @@
     return { x1: xAt(-1.2), y1: -1.2, x2: xAt(1.2), y2: 1.2 };
   });
 
-  // XOR's best achievable single-line accuracy hovers around 50–75%.
-  const showWall = $derived(mode === 'xor' && accuracy >= 0.6);
+  // The wall message should reward a genuine attempt, not greet the reader on
+  // arrival: defaults score 63% on XOR, and the best single line reaches ~78%,
+  // so trigger only once the user has pushed close to that ceiling.
+  const showWall = $derived(mode === 'xor' && accuracy >= 0.7);
 
   function reset() {
     w1 = DEFAULTS.w1;

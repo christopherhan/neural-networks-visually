@@ -37,7 +37,7 @@ jobs:
           BASE_PATH: /${{ github.event.repository.name }}
         run: |
           npm run build
-          if grep -rlE '(href|src)="/(chapters/|_astro/)' dist --include='*.html'; then
+          if grep -rlE '(href|src|component-url|renderer-url)="/(chapters/|_astro/)' dist --include='*.html'; then
             echo 'Unprefixed internal links found in base-path build' >&2
             exit 1
           fi
