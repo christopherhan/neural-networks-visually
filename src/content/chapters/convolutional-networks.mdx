@@ -1,0 +1,76 @@
+---
+number: 7
+title: Convolutional Networks
+summary: Stop wiring every pixel to every neuron - slide one tiny neuron everywhere instead.
+---
+
+import MathAside from '../../components/layout/MathAside.astro';
+import EngineerFooter from '../../components/layout/EngineerFooter.astro';
+import KernelPlayground from '../../components/figures/conv/KernelPlayground.svelte';
+
+Feed a photo to the networks we've built so far and you hit an absurdity.
+A megapixel image has a million inputs; wiring each to even a modest hidden
+layer costs *billions* of weights — nearly all of which would relearn the
+same lesson. Because here's what a dense layer doesn't know: an edge in the
+top-left corner is the same thing as an edge in the bottom-right. Images
+have structure — nearby pixels matter to each other, and patterns repeat
+everywhere. A layer that ignores that structure pays for its ignorance in
+parameters.
+
+The convolutional insight: build one *tiny* neuron — a 3×3 grid of weights
+called a **kernel** — and *slide it* across the whole image, computing its
+little weighted sum at every position. Same nine weights everywhere. The
+grid of responses it leaves behind is a **feature map**: a picture of
+*where the pattern lives*. Watch it happen:
+
+<KernelPlayground client:visible />
+
+Play the vertical-edge kernel across the window frame. Look at its weights:
+negative column, zeros, positive column — it computes "right side minus
+left side," so it fires exactly where brightness changes left-to-right: the
+frame's vertical strokes. Switch to horizontal edges and the response flips
+to the other strokes. Same image, different kernel, different question
+asked at every location. (Sharpen and blur are the same machinery wearing
+photo-editing clothes — your phone's filters are convolutions.)
+
+Now the numbers. That kernel asked its question at 144 positions using
+**9 weights total**. A dense layer answering the same 144 questions would
+have needed 144 separate neurons × 196 inputs ≈ 28,000 weights. Weight
+sharing is a ~3000× discount — and it comes with a bonus insight baked in:
+the pattern detector works *everywhere by construction*, so the network
+doesn't have to see a cat in every corner of the frame to recognize
+corner cats.
+
+A real convolutional network stacks this: dozens of kernels per layer (each
+learning its own pattern — and yes, *learning*: kernels are trained by the
+same backprop as everything else, not hand-designed like our presets), with
+each layer's feature maps becoming the next layer's input. Layer one finds
+edges; layer two combines edges into corners and textures; deeper layers
+respond to eyes, wheels, faces. It's chapter 6's composition story, but
+with geometry built in.
+
+<MathAside>
+
+A convolution computes $(I * K)_{r,c} = \sum_{i,j} K_{i,j}\, I_{r+i,\,c+j}$
+— a dot product between the kernel and each patch. Our figure uses "valid"
+padding ($14{-}2 = 12$ outputs per side) and stride 1. Parameter count for
+a conv layer: $k^2 \cdot C_{in} \cdot C_{out}$, independent of image size —
+that independence is the whole economic argument.
+
+</MathAside>
+
+One more architecture question remains for Part II. Images repeat in
+*space* — but what about data that unfolds in *time*, where the past has to
+inform the present? That needs a network with memory.
+
+<EngineerFooter>
+
+Convolution is a matmul with tied weights and a sliding access pattern —
+which makes it embarrassingly parallel and cache-friendly, i.e. exactly
+what GPUs eat. Frameworks lower it to im2col + GEMM or use implicit
+kernels (cuDNN). The parameters-vs-activations asymmetry is the operational
+gotcha: conv layers are cheap to *store* but expensive to *compute*, the
+reverse of dense layers. Pooling/stride trades resolution for receptive
+field — by the deep layers, each cell "sees" most of the image.
+
+</EngineerFooter>
