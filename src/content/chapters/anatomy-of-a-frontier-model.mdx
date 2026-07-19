@@ -1,0 +1,149 @@
+---
+number: 17
+title: Anatomy of a Frontier Model
+summary: Sixteen chapters, each one box in the blueprint - assemble them per the published DeepSeek-V3 / Kimi-K2 family recipe and the tower reads like an ordinary system diagram.
+---
+
+import MathAside from '../../components/layout/MathAside.astro';
+import EngineerFooter from '../../components/layout/EngineerFooter.astro';
+import FrontierAnatomy from '../../components/figures/anatomy/FrontierAnatomy.svelte';
+
+Chapter 15 closed on a headline worth re-reading slowly: "1 trillion
+parameters" and "32 billion active" are both true of the same model, and
+neither number alone tells you what you need to know. Chapter 16 closed
+on a related honesty — "1 million token context" is a systems
+achievement wearing a modeling-sounding name. Both chapters were,
+without quite saying so, describing pieces of one machine. This chapter
+puts the pieces back together. Nothing new gets introduced from here —
+no new formula, no new mechanism — this is the assembly chapter, where
+sixteen chapters' worth of boxes get stacked in the order a real frontier
+stack stacks them, and you get to read the result the way an engineer
+reads a system diagram: not in awe, but component by component.
+
+<FrontierAnatomy client:visible />
+
+Walk the figure top to bottom and every region has a name you already
+know. **Embedding** is chapter 9's lookup table, unchanged in kind,
+just re-tuned to a byte-level BPE vocabulary of roughly 160,000 entries
+so the model can represent the open web instead of three Gutenberg
+novels. Each of the 61 stacked blocks is chapter 11's transformer
+block — attention, residual, MLP, residual, the exact shape — with two
+of its interior parts swapped for the frontier-scale versions this
+book's last two chapters built up to. Attention is chapter 10's
+softmax(QKᵀ/√d)V, wearing chapter 16's fix: multi-head latent attention
+compresses each token's key and value into one shared ≈512-dimension
+latent instead of caching them at full size, because a KV cache that
+scales with 61 layers and a 128k context window has to be compressed
+or it eats the GPU alive. The block's MLP is chapter 15's mixture of
+experts: 1 shared expert plus 256 routed experts standing in for the
+single dense MLP chapter 11 described, a router sending every token to
+its own top 8, so parameter count and per-token compute finally stop
+being the same number. And at the top of the stack, the **LM head** is
+chapter 13's next-token projection, aimed at that same ≈160k-entry
+vocabulary, trained in part with chapter 14's pipeline plus a
+multi-token-prediction objective layered on top — predict a couple of
+tokens ahead instead of strictly one, which published results credit
+with a stronger training signal during pretraining and, as a side
+benefit, a faster decoding trick at inference. Click through the
+figure's four regions and each fact panel names its chapter explicitly;
+none of this should feel unfamiliar, because none of it is new.
+
+That "published-family" qualifier attached to every number in this
+figure is not throat-clearing — it's the actual honest boundary of what
+this chapter can show you. DeepSeek-V3 and Kimi K2 are real models with
+real published technical reports: their authors disclosed architecture
+shapes, parameter counts, and training-objective descriptions in enough
+detail to draw the diagram above with a straight face. What they did
+not disclose, and what no frontier lab discloses in full, is everything
+downstream of "here is the shape": the exact training data mixture and
+its filtering rules, the specific reward models and RL hyperparameters
+behind post-training (chapter 18 opens that door as far as it honestly
+goes), the internal eval suites a lab uses to decide a model is ready to
+ship, and any of it for models whose architecture was never published
+at all — Kimi K3, or systems built by labs like Anthropic, are simply
+not public in the way DeepSeek-V3 and Kimi K2 chose to be. This figure
+is the published family recipe, assembled honestly from real disclosed
+numbers. It is not a photograph of any specific production system's
+internals, and no honest diagram of one exists outside the labs that
+run it.
+
+Read that boundary correctly and the punchline actually gets stronger,
+not weaker: nothing in this tower is magic. Every box in the figure
+above is a chapter you've already read in full, with working code
+behind it — an embedding table, a softmax, a residual stream, an MLP
+(or 261 of them wearing a router's decision), a linear layer predicting
+what comes next. A frontier model is not a different kind of thing from
+the perceptron chapter 1 opened with. It is that same weighted sum,
+stacked, widened, sparsified, and trained on a scale that turns
+"unfamiliar" into "expensive" — but never into "incomprehensible."
+
+<MathAside title="Reproducing ≈1T total / ≈32B active — the coarse arithmetic">
+
+Take the figure's shape at face value and do the multiplication a
+spec sheet is hiding. All inputs below are published-family
+*approximations*, not any single model's disclosed internals to the
+last parameter — the point is that the arithmetic is ordinary
+multiplication, not that these exact digits are anyone's filing.
+
+Assume each expert (shared or routed) is an MLP of roughly $E \approx
+64\text{M}$ parameters — a published-family-scale guess for a single
+expert at this width. Every layer holds $1$ shared $+ 256$ routed $=
+257$ experts, and there are $61$ layers:
+
+$$
+\text{total (expert pool)} \approx 61 \times 257 \times 64\text{M}
+\approx 1.00 \times 10^{12} \approx 1\text{T}
+$$
+
+That single term already lands on the headline number, which is the
+point chapter 15 made about ordinary dense MLPs, now visible at
+trillion-parameter scale: the expert pool *is* the model, weight-count
+wise. Embeddings, attention weights, and the LM head add only a small
+sliver on top — a few billion parameters, not enough to move the "≈1T"
+rounding.
+
+Active parameters follow the same multiplication, restricted to what
+actually fires per token — 1 shared plus the top-8 routed experts, not
+all 257:
+
+$$
+\text{active (expert pool)} \approx 61 \times 9 \times 64\text{M}
+\approx 35.1\text{B}
+$$
+
+Add attention's own weights — always active, since MLA isn't routed —
+and the total lands in the low-to-mid tens of billions, the same
+neighborhood as the ≈32B commonly quoted for this published family.
+The few billion of daylight between this estimate and the published
+figure is exactly what "coarse, approximate accounting" should produce:
+real deployments spread routed capacity across more (and individually
+smaller) experts than this figure's round 256, among other
+simplifications. What survives the imprecision is the ratio: $1\text{T}
+/ 35\text{B} \approx 29\times$ — the same "pay for a slice, hold the
+whole pantry" sparsity chapter 15 measured on a toy of 8 experts, now
+measured on the real thing.
+
+</MathAside>
+
+<EngineerFooter>
+
+A frontier model is a distributed system whose config file happens to
+be called "architecture." Every box in this chapter's figure is a
+choice with an infrastructure consequence attached — MoE means
+expert-parallel sharding and all-to-all traffic (chapter 15), MLA means
+a compressed cache and a reconstruction step at serving time (chapter
+16), 61 layers means a pipeline-parallel split across accelerators that
+someone had to schedule. None of that shows up in a parameter count,
+and none of it is optional at this scale.
+
+Which is also why the moat isn't the shape. The architecture in this
+figure is, by design, publishable — DeepSeek and Moonshot AI wrote
+papers about it, and now this book has a working diagram of it too.
+What a lab actually protects is everything this chapter was honest
+about not knowing: the data, the post-training recipe, the eval bar,
+and the engineering that keeps a trillion-parameter system fed at
+acceptable latency and cost. Read "architecture" as the part of the
+recipe a competitor can copy from a paper, and "data + RL + infra" as
+the part they can't.
+
+</EngineerFooter>
