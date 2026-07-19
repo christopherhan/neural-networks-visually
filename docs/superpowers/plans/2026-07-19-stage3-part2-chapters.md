@@ -44,19 +44,27 @@ src/content/chapters/rnns-and-lstms.mdx                     (Task 3)
   import type { Activation } from '../../../lib/nn/network';
   import { mulberry32 } from '../../../lib/nn/rng';
 
-  // Build a narrow-but-deep net, push one example through, backprop once,
-  // and measure the mean |gradient| of each layer's weights. The real engine
+  // Build a deep net with DELIBERATELY oversized weights (the world before
+  // careful initialization), push one example through, backprop once, and
+  // measure the mean |gradient| of each layer's weights. The real engine
   // does the measuring — nothing here is illustrative fakery.
+  //
+  // Why the ×2 weight scale: with big weighted sums, tanh parks on its flat
+  // shoulders where its slope ≈ 0 — the classic saturation-driven vanishing
+  // gradient. ReLU has no shoulders (slope 1 when active), so the same
+  // architecture passes blame undamped — and with big weights, amplifies it.
   let depth = $state(5); // number of hidden layers, 1..8
   let activation: Activation = $state('tanh');
   let seedOffset = $state(0);
 
-  const WIDTH = 4;
+  const WIDTH = 8;
+  const SCALE = 2;
   const FLOOR = 1e-6;
 
   function measure(d: number, act: Activation, seed: number): number[] {
     const sizes = [1, ...Array(d).fill(WIDTH), 1];
     const mlp = new MLP(sizes, mulberry32(seed), act, 'tanh');
+    for (const p of mlp.parameters()) p.data *= SCALE;
     const loss = mseLoss(mlp.forward([0.7]), [1]);
     loss.backward();
     return mlp.layers.map((layer) => {
@@ -83,7 +91,7 @@ src/content/chapters/rnns-and-lstms.mdx                     (Task 3)
 
 <FigureShell
   title="Where gradients go to die"
-  caption="Mean |gradient| of each layer's weights after one backward pass, log scale. Layer 1 is the input side — the farthest from the loss."
+  caption="Mean |gradient| of each layer's weights after one backward pass, log scale. Layer 1 is the input side — farthest from the loss. Weights drawn deliberately large (the world before careful initialization — see the engineer's footnote)."
 >
   {#snippet children()}
     <svg viewBox="0 0 340 200" aria-label="Bar chart of gradient magnitude per layer; earlier layers receive smaller gradients with tanh">
@@ -115,12 +123,13 @@ src/content/chapters/rnns-and-lstms.mdx                     (Task 3)
       {/if}
     </p>
 
-    {#if activation === 'tanh' && depth >= 6 && ratio > 100}
+    {#if activation === 'tanh' && depth >= 6 && ratio > 50}
       <p class="note">
-        Every tanh the blame passes through multiplies it by a slope ≤ 1 —
-        stack enough of them and the early layers barely hear about their
-        mistakes. Now click <strong>ReLU</strong> and watch the same
-        architecture breathe again.
+        Each tanh multiplies passing blame by its local slope — and with big
+        weighted sums, tanh sits on its flat shoulders where that slope is
+        nearly zero. Stack enough of them and the early layers barely hear
+        about their mistakes. Now click <strong>ReLU</strong> and watch the
+        same architecture pass blame straight through.
       </p>
     {/if}
   {/snippet}
@@ -209,9 +218,12 @@ lives.
 
 So: stack twenty layers and profit? Not so fast. Remember how blame travels
 (chapter 4): backward through every operation, *multiplied* by each local
-slope along the way. A tanh's slope is at most 1 — and usually much less.
-Blame that crosses eight tanh layers gets multiplied by eight small numbers.
-Watch what that does:
+slope along the way. And tanh has an Achilles' heel: feed it a large sum
+and it parks on its flat shoulders, where its slope is nearly **zero** —
+you saw those shoulders yourself in chapter 2. In a deep stack each layer's
+outputs feed the next layer's sums, so with any carelessness about weight
+sizes, saturation somewhere is almost guaranteed. Blame that crosses eight
+saturated tanhs gets multiplied by eight near-zeros. Watch what that does:
 
 <GradientFlowFigure client:visible />
 
@@ -224,11 +236,14 @@ faintest whisper of what went wrong. This is the **vanishing gradient
 problem**, the great villain of 1990s neural networks — the same wall the
 tanh damping hinted at in chapter 4.
 
-Now click ReLU. Its slope is exactly 1 wherever it's active — blame passes
-through undamped. The bars level out (mostly — dead ReLUs claim their own
-small tax). One activation swap, and depth becomes affordable. This single
-trick, plus better initialization and (later) skip connections, is a large
-part of why "deep" learning became possible at all.
+Now click ReLU. Its slope is exactly 1 wherever it's active — there are no
+shoulders to get stuck on, so blame passes through undamped. The bars level
+out, and often tilt the *other* way: undamped blame flowing through large
+weights can grow layer over layer — the mirror-image **exploding gradient**
+problem. Depth is a knife that cuts both ways; ReLU merely stops it cutting
+toward zero. Taming both directions took ReLU *plus* careful weight
+initialization *plus* (later) skip connections — and together they're a
+large part of why "deep" learning became possible at all.
 
 Hit "Re-roll weights" a few times — the pattern survives every draw. It's
 not bad luck; it's arithmetic.
@@ -253,11 +268,14 @@ match the structure of the data itself.
 
 A deep net's backward pass is a chain of matrix products; vanishing/
 exploding gradients are just the condition number of that chain. The
-modern fixes are engineering, not magic: ReLU-family activations
-(slope 1), careful init (Xavier/He scale weights so products stay near 1),
-normalization layers, and residual connections — which add an identity
-"bypass lane" so gradients can skip the multiplications entirely. You'll
-meet that last idea again inside every transformer block in Part III.
+figure's weights are deliberately drawn oversized — the pre-2010 default —
+which is exactly what modern initialization exists to prevent: Xavier/He
+init scales weights by fan-in so per-layer products start near 1 and tanh
+stays off its shoulders. The rest of the toolkit is equally unmagical:
+ReLU-family activations (slope 1), normalization layers, and residual
+connections — an identity "bypass lane" letting gradients skip the
+multiplications entirely. You'll meet that last idea again inside every
+transformer block in Part III.
 
 </EngineerFooter>
 ````
