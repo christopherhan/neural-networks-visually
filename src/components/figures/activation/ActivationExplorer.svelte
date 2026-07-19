@@ -24,7 +24,6 @@
 
   const sx = linearScale([-3, 3], [12, 328]);
   const sy = linearScale([-1.5, 1.5], [208, 12]);
-  const clampY = (v: number) => Math.max(-1.5, Math.min(1.5, v));
   const fmt = (v: number) => v.toFixed(2);
 
   const fn = $derived(FNS[fnKey]);
@@ -33,7 +32,7 @@
     const pts: string[] = [];
     for (let i = 0; i <= 120; i++) {
       const xi = -3 + (6 * i) / 120;
-      pts.push(`${sx(xi)},${sy(clampY(g(xi)))}`);
+      pts.push(`${sx(xi)},${sy(g(xi))}`);
     }
     return pts.join(' ');
   }
@@ -55,12 +54,13 @@
       {#if showDerivative}
         <polyline points={dCurve} fill="none" stroke="var(--accent-gold)" stroke-width="2" stroke-dasharray="5 4" />
       {/if}
-      <line x1={sx(x)} y1={sy(-1.5)} x2={sx(x)} y2={sy(clampY(fn.f(x)))} stroke="var(--faint)" stroke-dasharray="3 3" />
-      <circle cx={sx(x)} cy={sy(clampY(fn.f(x)))} r="6" fill="var(--accent-red)" />
+      <line x1={sx(x)} y1={sy(-1.5)} x2={sx(x)} y2={sy(fn.f(x))} stroke="var(--faint)" stroke-dasharray="3 3" />
+      <circle cx={sx(x)} cy={sy(fn.f(x))} r="6" fill="var(--accent-red)" />
     </svg>
 
     <p class="readout">
       f({fmt(x)}) = <strong>{fmt(fn.f(x))}</strong>
+      {#if fn.f(x) > 1.5} <span class="off">(off the chart ↑)</span>{/if}
       {#if showDerivative}
         &nbsp;·&nbsp; slope f′({fmt(x)}) = <strong class="gold">{fmt(fn.df(x))}</strong>
       {/if}
@@ -80,6 +80,7 @@
       <button
         type="button"
         class:active={fnKey === key}
+        aria-pressed={fnKey === key}
         onclick={() => (fnKey = key as FnKey)}
       >
         {def.label}
@@ -100,6 +101,10 @@
   }
   .readout .gold {
     color: var(--accent-gold-ink);
+  }
+  .readout .off {
+    color: var(--faint);
+    font-style: italic;
   }
   .dead {
     font-family: var(--font-ui);
