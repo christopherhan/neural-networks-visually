@@ -32,13 +32,18 @@ A guided tour of things worth trying:
    genuinely struggle to wrap two interlocking arms. Watch it try — then
    switch to **8 × 8 deep** and watch capacity matter. This intuition (some
    shapes need more network) is half of chapter 6.
-4. **Blow it up.** Set the learning rate to 1.0 on any dataset. The loss
-   sparkline goes jagged, then 💥. Chapter 3's rolling ball, now with a few
-   dozen dimensions doing the rolling. Reset, drop the rate, feel the
-   difference.
+4. **Push the rate — and notice what *doesn't* happen.** Set the learning
+   rate to 1.0. No chapter-3 explosion: tanh caps every prediction inside
+   (−1, 1), so this loss surface has no cliff to fall off — and on these
+   small, full-batch problems the hot rate actually *wins* (try Spiral at
+   1.0 versus 0.1; the fast run reaches a loss the slow one won't touch).
+   Don't over-learn that lesson, though: real training runs use noisier
+   gradients and unbounded losses, where chapter 3's 💥 sits one hot step
+   away. The seatbelt here is the architecture, not a law of nature.
 5. **Watch the loss curve, not just the picture.** The sparkline is what
    practitioners actually stare at all day. Smooth descent: learning.
-   Plateaus: stuck. Jagged sawtooth: rate too hot.
+   Sinks fast then refuses to budge: the network may be too small for the
+   shape (watch Spiral on 8 neurons).
 
 Every idea from Part I is on this screen at once. Neurons computing weighted
 sums (ch. 1), tanh bending them (ch. 2), a loss being driven downhill
