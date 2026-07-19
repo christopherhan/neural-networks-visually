@@ -48,6 +48,8 @@ const isWritten = (slug: string | undefined) =>
       {
         next && isWritten(next.slug) ? (
           <a href={url(`chapters/${next.slug}/`)}>{next.title} →</a>
+        ) : chapter.number === CURRICULUM.length ? (
+          <span class="soon">Journey complete ✦</span>
         ) : (
           <span class="soon">Next: coming soon</span>
         )

@@ -1,0 +1,174 @@
+---
+number: 18
+title: Post-Training & Reasoning
+summary: Base models predict, assistants behave - RLHF, verifiable rewards, and the loop that turns raw capability into something worth trusting with a question.
+---
+
+import MathAside from '../../components/layout/MathAside.astro';
+import EngineerFooter from '../../components/layout/EngineerFooter.astro';
+import AlignmentLoop from '../../components/figures/rlhf/AlignmentLoop.svelte';
+
+Chapter 14 named the pipeline's last two stages and kept moving: SFT nudges
+a base model into answering instead of merely continuing, and RLHF further
+shapes tone, helpfulness, and refusals. This chapter opens RLHF up and
+looks at what is actually happening inside that stage, then does the same
+for the newest addition to the pipeline — training a model to spend real
+inference-time compute on a scratchpad before it answers, which is the
+mechanism behind what everyone now calls a "reasoning model."
+
+Start with the gap RLHF exists to close. A model trained to convergence on
+next-token prediction — chapter 13's loop, run at chapter 14's scale — is
+a supremely capable autocomplete. Ask it a question and it might answer,
+or it might continue your question with three more questions, because
+"complete this text plausibly" and "answer this person helpfully" are
+different objectives that happen to overlap most of the time, not all of
+it, and a base model has no way to know which one you meant. SFT narrows
+that gap with direct examples of the behavior you want. RLHF narrows what
+is left by training on *comparisons* rather than examples — a genuinely
+different kind of signal, worth walking slowly.
+
+<AlignmentLoop client:visible />
+
+Step through the preference loop and every stage is a familiar shape
+wearing new clothes. Generation is chapter 13's sampling loop, just run
+several times per prompt. The reward model is, underneath, an ordinary
+trained network — a classifier, not a philosopher — fit to predict which
+of two candidates a rater preferred. And "optimize the policy against the
+reward model" is chapter 3's gradient descent again, except the loss this
+time comes from a learned proxy for approval instead of a label pulled
+from a dataset. Nothing new got invented to build this loop; four
+chapters' worth of mechanism got pointed at a new kind of target.
+
+That target is also where RLHF gets honest about its own risk. The reward
+model is not the rater — it is a learned approximation of the rater's
+judgment, trained on however many thousand comparisons it saw, and it
+inherits every blind spot in that sample. Optimize a policy against it too
+hard, for too long, and the policy will find those blind spots before
+anyone else does: answers that score well because they exploit some quirk
+the reward model over-rewards — a particular hedge, a particular length, a
+confident tone — rather than because they are actually better. That
+failure has a name, **reward hacking**, and the lesson underneath it is
+not new: optimize a proxy hard enough and it stops measuring the thing you
+built it to measure, the same warning chapter 3's loss functions carried
+in miniature, now playing out at the scale of an entire model's
+personality. There is no formula that fixes this outright — only process:
+refresh the reward model on new comparisons, cap how far the policy is
+allowed to wander from where it started (this chapter's math aside makes
+that cap literal), and keep human judgment in the loop somewhere a learned
+proxy cannot fully replace.
+
+Toggle the figure to **reasoning training** and the loop keeps its shape
+but swaps out its hardest-to-get ingredient. RLHF needs a rater — human or
+AI — forming a judgment call, and judgment calls are expensive and
+occasionally exploitable, as the paragraph above just showed. Math and
+code problems with a checkable answer sidestep that problem entirely: a
+unit test either passes or it does not, a number either matches or it does
+not, so the rater disappears from the loop and a script takes its place.
+Train a policy with RL against that pass/fail signal and something
+notable happens — the model learns to spend far more tokens before
+committing to an answer, a long scratchpad of intermediate steps that
+looks, from the outside, like showing its work. It is worth being precise
+about what that scratchpad actually is. Nobody labeled any of it "good
+reasoning"; no training example anywhere said "think like this." The
+scratchpad is sampled tokens, the identical generation mechanism chapter
+13 built, and RL simply reinforced whichever patterns of sampled tokens
+tended to precede a checked-out answer and suppressed whichever did not.
+Run that filter over enough problems and enough updates, and what survives
+starts to look like planning, backtracking, double-checking — not because
+the model set out to reason, but because those habits are the ones that
+keep getting verifiable answers right. "Thinking," in this loop, is a
+description the tokens earned, not a label anyone applied in advance. It
+is also the newest lever in the scaling story: alongside more parameters
+and more training compute, there is now a third dial — more compute spent
+*at answer time*, thinking before responding — and it trades off against
+the other two in ways labs are still actively mapping.
+
+Which brings this book back to where it started. Chapter 1 opened with an
+`if` statement — a weighted sum of temperature and humidity, compared
+against a threshold, deciding whether to turn on a fan. "You already
+write neurons," that chapter said, and eighteen chapters later the claim
+still holds at every scale this book walked through. A perceptron is a
+weighted sum with a threshold. A layer is many of those stacked. A
+transformer block is attention — itself built from weighted sums — feeding
+an MLP, more weighted sums. A frontier reasoning model is 61 of those
+blocks, with a router and a compressed cache bolted on, trained first to
+predict the next token and then, in this chapter, trained again against a
+reward signal built from judgment or from a checker script. None of those
+additions changed the atom. A trillion-parameter model working through a
+hard proof is still, underneath every abstraction this book added one
+chapter at a time, computing weighted sums, comparing them against
+thresholds, and adjusting its weights by the gradient of some loss — the
+same three moves chapter 1's `if` statement made by hand, run an
+almost incomprehensible number of times, tuned by a training loop instead
+of by a programmer typing literal numbers into the source. That was the
+whole claim this site set out to prove, and it was already true on page
+one.
+
+What this book did not cover deserves one honest paragraph rather than
+silence. **Multimodality** — models that read images, audio, and video
+through the same architecture, by turning pixels and waveforms into
+tokens the exact transformer block already knows how to attend over — is
+a natural extension of everything here; this site simply stayed with text
+throughout. **Agents** — models that call tools, browse, write and run
+code, and act across many steps toward a goal — are mostly a scaffolding
+problem wrapped around the model this book describes, not a different
+model underneath, though getting that scaffolding to fail gracefully is
+its own hard engineering discipline. **Interpretability** research asks a
+question this book never touched: not just what a trained network
+computes, but what its weights actually represent internally, and whether
+a concept like "this token is sarcastic" or "this plan is deceptive" lives
+somewhere legible inside the activations — genuinely open, and genuinely
+important. And **safety research** more broadly — alignment beyond RLHF's
+mechanics, resistance to misuse, evaluation for dangerous capabilities
+before a model ever ships — is the field asking whether the loop this
+chapter described is actually steering these systems where we want them
+to go, at the scale they are now being built. All four are real, active,
+and worth your time next; none of them needed a different foundation than
+the one this book just spent eighteen chapters building.
+
+<MathAside title="The RLHF objective — reward, on a leash">
+
+RLHF's optimization target is usually written as one expression: maximize
+expected reward, minus a penalty for drifting too far from where the
+policy started.
+
+$$
+\max_{\pi} \; \mathbb{E}_{x \sim D,\, y \sim \pi(\cdot \mid x)}\big[\, r(x, y) \,\big] \;-\; \beta \, D_{\mathrm{KL}}\big(\pi(\cdot \mid x) \,\Vert\, \pi_{\mathrm{ref}}(\cdot \mid x)\big)
+$$
+
+$r(x,y)$ is the reward model's score for answer $y$ to prompt $x$, and
+$\pi_{\mathrm{ref}}$ is the policy *before* RLHF started — the SFT model,
+held fixed as a reference point. The $\beta \, D_{\mathrm{KL}}$ term is a
+leash, not decoration: RL will happily push the policy toward whatever
+the reward model rewards, and without a penalty holding it near
+$\pi_{\mathrm{ref}}$, it can drift into outputs so unlike anything the
+reward model was trained on that its scores stop meaning anything at all
+— reward hacking's quieter cousin, wandering off the map instead of
+gaming a landmark on it.
+
+</MathAside>
+
+Eighteen chapters, one weighted sum, all the way up. The trail map is
+still there whenever you want to walk any of it again — journey complete.
+
+<EngineerFooter>
+
+Alignment is not a final layer bolted onto a finished model — it is a
+product and safety discipline that runs continuously, with its own
+iteration loop, its own regressions, and its own on-call: reward models
+get retrained, policies drift, new failure modes get found and patched,
+and every one of those is a shipped change to a system already serving
+traffic. Capability evals decide whether a model is good enough to
+release; safety evals — red-teaming, refusal testing, the release tests
+chapter 14 named — decide whether it is safe enough to, and both gates
+matter independently, because a model can clear one and still fail the
+other.
+
+If you remember one thing from this chapter, make it this: the loop in
+the figure above is simple enough to whiteboard in five boxes — generate,
+judge, fit a reward, optimize, repeat. The consequences of running that
+loop at the scale a frontier lab runs it are not simple at all, and the
+gap between the loop's simplicity and its consequences is exactly why this
+is a discipline, not a checkbox.
+
+</EngineerFooter>
