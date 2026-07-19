@@ -1,0 +1,88 @@
+/* Warm field-notes design system — see spec §Visual & UX direction */
+:root {
+  --paper: #fdf6e3;
+  --paper-raised: #fffdf5;
+  --ink: #433422;
+  --ink-strong: #586e75;
+  --muted: #657b83;
+  --faint: #93a1a1;
+  --line: #d9c8a9;
+  --line-soft: #e8dcc3;
+  --accent-blue: #268bd2;
+  --accent-red: #dc322f;
+  --accent-green: #859900;
+  --accent-gold: #b58900;
+
+  --font-prose: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  --font-ui: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-code: 'SF Mono', Menlo, Consolas, monospace;
+
+  --measure: 42rem; /* prose column width */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-prose);
+  line-height: 1.7;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-size: 1.075rem;
+}
+
+h1, h2, h3 {
+  color: var(--ink-strong);
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+a {
+  color: var(--accent-blue);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+code, pre {
+  font-family: var(--font-code);
+  font-size: 0.86em;
+}
+
+pre {
+  background: var(--paper-raised);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+}
+
+/* Small uppercase label (part markers, chapter numbers) */
+.label {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+
+/* Sketchy container used by figures and asides */
+.sketch {
+  background: var(--paper-raised);
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
