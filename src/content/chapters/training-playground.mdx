@@ -1,0 +1,66 @@
+---
+number: 5
+title: The Training Playground
+summary: Everything so far, live - train a real network and watch it carve up the plane.
+---
+
+import EngineerFooter from '../../components/layout/EngineerFooter.astro';
+import TrainingPlayground from '../../components/figures/playground/TrainingPlayground.svelte';
+
+Four chapters of parts. Time to turn the key.
+
+Below is a complete neural network — real weights, real tanh neurons, the
+real autograd engine from last chapter — training **live in your browser
+tab**, right now, on whatever you throw at it. The colored regions are the
+network's current opinion about every point in the plane; the dots are the
+truth it's being graded against. Press **Train** and watch opinion bend
+toward truth.
+
+<TrainingPlayground client:visible />
+
+A guided tour of things worth trying:
+
+1. **XOR, at last.** It starts on the dataset that humiliated the
+   perceptron. Press Train. Within a few hundred epochs, the boundary folds
+   itself into the four-quadrant checkerboard no single line could draw.
+   Chapter 1's wall, demolished in about two seconds — this is what "bendy
+   functions plus layers" buys.
+2. **Circles.** A ring around a disk. Watch the network discover it needs a
+   *closed curve* — early on the boundary is a clumsy blob, then it tightens
+   around the inner cluster.
+3. **Spiral, with the small network.** Here's a healthy failure: 8 neurons
+   genuinely struggle to wrap two interlocking arms. Watch it try — then
+   switch to **8 × 8 deep** and watch capacity matter. This intuition (some
+   shapes need more network) is half of chapter 6.
+4. **Blow it up.** Set the learning rate to 1.0 on any dataset. The loss
+   sparkline goes jagged, then 💥. Chapter 3's rolling ball, now with a few
+   dozen dimensions doing the rolling. Reset, drop the rate, feel the
+   difference.
+5. **Watch the loss curve, not just the picture.** The sparkline is what
+   practitioners actually stare at all day. Smooth descent: learning.
+   Plateaus: stuck. Jagged sawtooth: rate too hot.
+
+Every idea from Part I is on this screen at once. Neurons computing weighted
+sums (ch. 1), tanh bending them (ch. 2), a loss being driven downhill
+(ch. 3), and backprop supplying every gradient for every step (ch. 4). There
+is no other machinery. What you're watching is, at toy scale, exactly what
+happens on a GPU cluster when someone trains the models in Part III — same
+loop, more zeros.
+
+Part I is complete. Part II asks the natural next questions: what happens
+when you stack *many* layers (and why gradients vanish on the way down),
+and what happens when you shape the network to match the data — grids for
+images, loops for sequences.
+
+<EngineerFooter>
+
+What separates this toy from production training: batching (we do
+full-batch; real training samples minibatches), tensors (we push scalars
+through a graph; frameworks push matrices through fused GPU kernels), an
+optimizer with state (Adam keeps running moments per weight), and
+regularization. What's identical: the loop. `forward → loss → backward →
+step`, millions of times. If you can read this page's source — and you can,
+it's ~400 lines all-in — you already understand the skeleton of every
+training run on earth.
+
+</EngineerFooter>
