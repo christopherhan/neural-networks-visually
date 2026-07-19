@@ -28,7 +28,7 @@ jobs:
       - run: npm test
       - run: npm run check
       - run: npm run build
-      - run: npx linkinator ./dist --recurse --silent --skip "^https?://"
+      - run: npx linkinator ./dist --recurse --silent --skip "^https?://(?!localhost)"
 
   build:
     runs-on: ubuntu-latest
