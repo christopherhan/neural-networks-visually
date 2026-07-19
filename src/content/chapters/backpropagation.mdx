@@ -1,0 +1,94 @@
+---
+number: 4
+title: Backpropagation
+summary: Blame flows backward - how every weight learns its share of the error.
+---
+
+import MathAside from '../../components/layout/MathAside.astro';
+import EngineerFooter from '../../components/layout/EngineerFooter.astro';
+import BackpropStepper from '../../components/figures/backprop/BackpropStepper.svelte';
+
+Last chapter ended on a cliffhanger: gradient descent needs the slope of the
+loss with respect to *every* weight — millions of them — and re-running the
+network once per weight would take geologic time. The answer is an algorithm
+so central that everything else in deep learning is a footnote to it.
+
+The insight: a network isn't a monolith. It's a **graph of tiny operations**
+— multiply here, add there, squash at the end — and each operation is so
+simple that it knows its own local slope by heart. A multiply knows that
+nudging one input scales through by the *other* input. An add passes nudges
+straight through. A tanh damps them by `1 − tanh²`.
+
+**Backpropagation** is bookkeeping over those local facts. Run the graph
+forward to get the loss. Then walk *backward*, and at each node apply one
+rule — the chain rule: *blame arriving at a node's output, times the node's
+local slope, is the blame for its input.* By the time you reach the weights,
+each one holds exactly ∂loss/∂weight. One forward pass, one backward pass,
+every slope. Step through it yourself:
+
+<BackpropStepper client:visible />
+
+Watch the backward phase closely and you'll see the personalities: the
+square *doubles* blame, the add *copies* it to both parents, the multiply
+*swaps in the partner* (w₁'s blame gets scaled by x₁ — how much w₁ mattered
+depends on what it was multiplied by), and the tanh *damps* blame by its
+slope. When its input is extreme, tanh's slope is nearly zero — blame dies
+there. That's the "vanishing gradient," and it will haunt us in chapter 6.
+
+Here's the part this site is built to show you. The figure isn't an
+illustration *of* the algorithm — it *ran* the algorithm. Every number came
+from the same ~120-line engine that trains networks throughout this site,
+and its whole backward pass fits on a napkin:
+
+```ts
+// value.ts — the heart of it. Each op records how to route blame:
+mul(other) {
+  const out = new Value(this.data * other.data, [this, other]);
+  out._backward = () => {
+    this.grad += other.data * out.grad;   // partner swaps in
+    other.grad += this.data * out.grad;
+  };
+  return out;
+}
+
+backward() {
+  // topologically sort the graph, then apply the chain rule in reverse
+  this.grad = 1;
+  for (const node of reverseTopoOrder(this)) node._backward();
+}
+```
+
+That's not pseudocode — it's lightly trimmed from
+[`src/lib/nn/value.ts`](https://github.com/christopherhan/neural_networks/blob/main/src/lib/nn/value.ts)
+in this site's repository. PyTorch and JAX are this exact idea, plus tensors,
+plus a decade of engineering.
+
+<MathAside>
+
+For a composition $L = f(g(w))$, the chain rule gives $\frac{\partial
+L}{\partial w} = \frac{\partial L}{\partial g}\cdot\frac{\partial
+g}{\partial w}$. Backprop applies this at every node in reverse topological
+order, accumulating with $+{=}$ when a value feeds multiple consumers.
+Cost: one backward pass is a small constant times the forward pass,
+regardless of parameter count — that constant-factor miracle is why
+million-parameter training is possible at all.
+
+</MathAside>
+
+Now we hold all the pieces: neurons that bend (ch. 2), a score to shrink
+(ch. 3), and — as of this chapter — every slope, cheaply. There is nothing
+left to learn before *learning itself*. Next: put it all together and watch
+a network train, live.
+
+<EngineerFooter>
+
+Backprop is reverse-mode automatic differentiation: a reverse topological
+traversal where each op applies its local Jacobian to the incoming
+gradient. It's `O(forward cost)` per backward pass — independent of
+parameter count, which is the whole ballgame. The `+=` accumulation (a
+value used twice gets blame from both uses) and the "zero grads between
+steps" contract are the two details that bite people implementing it from
+scratch. You've now read a complete implementation; nothing in
+`torch.autograd` will ever feel mystical again.
+
+</EngineerFooter>
