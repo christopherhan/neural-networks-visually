@@ -9,9 +9,11 @@
   --line: #d9c8a9;
   --line-soft: #e8dcc3;
   --accent-blue: #268bd2;
+  --link: #1a6fa8; /* text-safe blue, >=4.5:1 on paper */
   --accent-red: #dc322f;
   --accent-green: #859900;
   --accent-gold: #b58900;
+  --accent-gold-ink: #8a6800; /* text-safe gold, >=4.5:1 on paper */
 
   --font-prose: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
   --font-ui: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -44,7 +46,7 @@ h1, h2, h3 {
 }
 
 a {
-  color: var(--accent-blue);
+  color: var(--link);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
@@ -69,7 +71,7 @@ pre {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--accent-gold);
+  color: var(--accent-gold-ink);
 }
 
 /* Sketchy container used by figures and asides */
@@ -84,5 +86,6 @@ pre {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
