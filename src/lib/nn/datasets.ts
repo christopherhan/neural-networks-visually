@@ -28,7 +28,7 @@ export function twoClouds(n = 15, seed = 1): Point2[] {
 
 /** The XOR arrangement: label = sign(x*y). Uniform in the four quadrants,
  *  keeping a clear band around the axes. No single line separates it. */
-export function xorQuadrants(n = 40, seed = 2): Point2[] {
+export function xorQuadrants(n = 40, seed = 3): Point2[] {
   const rng = mulberry32(seed);
   const points: Point2[] = [];
   const sample = () => {

@@ -50,4 +50,17 @@ describe('xorQuadrants', () => {
       `${Math.sign(p.x)}${Math.sign(p.y)}`;
     expect(new Set(pts.map(quadrant)).size).toBe(4);
   });
+
+  it('default seed gives a visually balanced spread (every quadrant ≥ n/8)', () => {
+    const pts = xorQuadrants(40);
+    const counts = new Map<string, number>();
+    for (const p of pts) {
+      const q = `${Math.sign(p.x)},${Math.sign(p.y)}`;
+      counts.set(q, (counts.get(q) ?? 0) + 1);
+    }
+    expect(counts.size).toBe(4);
+    for (const c of counts.values()) {
+      expect(c).toBeGreaterThanOrEqual(5);
+    }
+  });
 });
