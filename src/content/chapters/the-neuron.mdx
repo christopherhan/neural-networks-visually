@@ -73,8 +73,9 @@ A neuron is `dot(w, x) + b` piped through a nonlinearity — a fused
 multiply-accumulate with a squashing function. A layer is a matrix-vector
 product; a network is a pipeline of them. That's the whole trick. The rest
 of this site is about choosing `w` automatically (chapters 3–5) and wiring
-billions of these together (chapters 6 onward). The figure above is powered
-by the same ~150-line autograd engine you'll meet in chapter 4 — view
-source, it's all there.
+billions of these together (chapters 6 onward). The figure above runs
+exactly this weighted-sum math — and in chapter 4 you'll meet the ~150-line
+autograd engine that teaches networks to tune `w` themselves. View source
+anytime; the whole engine ships with this site.
 
 </EngineerFooter>

@@ -3,7 +3,7 @@
   import { twoClouds, xorQuadrants, type Point2 } from '../../../lib/nn/datasets';
   import { linearScale } from '../../../lib/viz/scale';
 
-  const DEFAULTS = { w1: 0.4, w2: -0.6, b: 0.1 };
+  const DEFAULTS = { w1: 0.5, w2: 0.5, b: -0.7 };
 
   let w1 = $state(DEFAULTS.w1);
   let w2 = $state(DEFAULTS.w2);
