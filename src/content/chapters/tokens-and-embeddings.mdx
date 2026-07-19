@@ -1,0 +1,123 @@
+---
+number: 9
+title: Tokens & Embeddings
+summary: A network computes on numbers, not words - so before attention can look anywhere, something has to decide what the "somewheres" are.
+---
+
+import MathAside from '../../components/layout/MathAside.astro';
+import EngineerFooter from '../../components/layout/EngineerFooter.astro';
+import TokenizerDemo from '../../components/figures/tokens/TokenizerDemo.svelte';
+import EmbeddingMap from '../../components/figures/tokens/EmbeddingMap.svelte';
+
+Chapter 8 ended on a promise: instead of carrying a compressed memory
+forward step by step, a network could simply *look back* at any part of a
+sequence, directly, whenever it needs to. Part III is that promise kept —
+but "look back at the sequence" quietly assumes something hasn't been
+settled yet. Look back at *what*? A neuron computes weighted sums and
+matrix multiplies; it has no idea what a letter is. Before attention can
+reach across a sentence, the sentence has to become numbers it can reach
+across. That's this chapter's whole job, and it turns out to be less
+obvious than it sounds.
+
+Two naive answers, and why both break. **Feed it individual characters.**
+Simple, tiny vocabulary (a few dozen symbols), nothing ever out-of-vocabulary
+— but a paragraph explodes into hundreds of tokens, and every one of them
+is nearly meaningless on its own: the network has to spend enormous effort
+just re-discovering that "t-h-e" is a word before it can think about what
+the word *means*. **Feed it whole words instead.** Now each token actually
+means something, but the vocabulary balloons toward unbounded — every
+name, typo, and made-up word needs its own slot — and words that obviously
+share structure ("run", "running", "runner") get completely unrelated ids,
+so nothing learned about one transfers to the others. Too fine-grained and
+everything is noise; too coarse and the vocabulary can't hold still.
+
+**Byte-pair encoding (BPE)** splits the difference, and it does it by
+*learning* the vocabulary from data instead of guessing it in advance.
+Start with individual characters as the only tokens. Scan a large body of
+text and find the pair of adjacent symbols that occurs together most
+often — say, `t` and `h`. Merge every occurrence of that pair into a single
+new symbol, `th`. Now repeat: find the next most frequent adjacent pair
+(maybe `th` and `e`, giving `the`) and merge it too. Do this a few hundred
+times and something useful falls out automatically: strings that show up
+constantly — "the", "ing", "and" — earn their own single token, cheaply,
+while anything rare stays broken into smaller pieces. Nothing is ever truly
+out-of-vocabulary, because in the worst case a word just falls all the way
+back to individual characters — it stays *spellable*, even if it isn't
+efficient.
+
+<TokenizerDemo client:visible />
+
+Type a sentence and watch where the seams fall. Common words like "the" or
+"and" usually ride as a single whole chip. Try something rarer —
+"extraordinarily" next to "the" is a good pair to compare — and watch it
+shatter into three or four pieces, each one a chunk this exact vocabulary
+happened to learn was worth keeping.
+
+Tokenizing gets text down to a sequence of integers, but an integer id
+carries no relationships — id 47 isn't "closer" to id 48 than it is to id
+9000. The next step is to give every id a **learned vector**: a row in a
+big trainable matrix, looked up by id, called an **embedding**. Nothing
+about that vector is hand-designed. It starts random, and the only pressure
+on it is the network's single training objective — predict the next
+token — applied over and over across a whole corpus. That turns out to be
+enough: if two tokens tend to show up in similar contexts, the gradient
+nudges their vectors in similar directions each time, and over millions of
+updates they drift toward each other in the embedding space. "Meaning," in
+this scheme, is nothing more than geometry that training discovered on its
+own.
+
+<EmbeddingMap client:visible />
+
+This is the real embedding space this site's tiny model learned, flattened
+from 64 dimensions down to 2 so it fits on a page — some structure survives
+the squashing, some doesn't. Search for a few tokens and see what lands
+near what: punctuation marks tend to huddle together, pronouns cluster with
+other pronouns, and dialogue verbs like "said," "cried," and "thought" —
+the words that report *how* something was spoken in these storybooks —
+tend to keep close company too. Nobody told the model that punctuation is a
+category or that "cried" is a cousin of "said." It fell out purely from
+which tokens kept appearing in similar neighborhoods.
+
+Worth sizing this honestly. This site's tokenizer has a vocabulary of 383
+tokens and 64-dimensional embeddings, trained on three short storybooks.
+Production language models use the same exact recipe at a very different
+scale — vocabularies around 100,000 tokens, embeddings thousands of
+dimensions wide, trained on a meaningful fraction of the internet. Nothing
+about the *mechanism* changes; only the size of the matrices and the size
+of the data pushing on them.
+
+<MathAside>
+
+An embedding lookup is a matrix multiply in disguise: represent token id
+$i$ as a one-hot vector $e_i \in \mathbb{R}^V$ (all zeros except a 1 at
+position $i$), and $e_i^\top E$ against the embedding matrix $E \in
+\mathbb{R}^{V \times d}$ picks out exactly row $i$ — the lookup *is* the
+matrix product, just computed by indexing instead of by actually
+multiplying zeros. Vocabulary size $V$ and sequence length $T$ trade
+against each other: a coarser tokenizer (small $V$) needs more tokens to
+say the same thing (larger $T$ for a given passage), while a finer one
+(large $V$) shortens $T$ at the cost of a bigger embedding table. This
+site's $V = 383$ is trained on a corpus of three Gutenberg books, about
+547KB of raw text — tiny by production standards, but the merge algorithm
+and the lookup are identical to what ships in a frontier model.
+
+</MathAside>
+
+<EngineerFooter>
+
+Tokenizer quirks are the classic LLM footgun, and now you can see exactly
+why. Ask a model to count the r's in "strawberry" and it may get it wrong —
+not because it can't count, but because it never *sees* "strawberry" as
+eight characters; it sees one or two token ids, and the letters inside a
+token are invisible to everything downstream. The same blind spot shows up
+in arithmetic quirks, where "380" and "38" and "0" might tokenize in
+inconsistent, non-place-value-aligned ways depending on context. The
+embedding table itself is unglamorous: it's just a $(V \times d)$ matrix of
+trainable numbers, functioning as the model's literal first layer — nothing
+more exotic than that. And the BPE merge-the-most-frequent-pair algorithm
+in this chapter's demo isn't a simplification for teaching purposes; it's
+exactly what OpenAI's `tiktoken` and Google's `sentencepiece` run in
+production, just industrialized: bigger corpora, bigger vocabularies,
+heavily optimized merge implementations, same core idea.
+
+</EngineerFooter>
