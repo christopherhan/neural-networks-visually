@@ -64,8 +64,12 @@
     border-radius: 8px;
     cursor: pointer;
   }
-  .fig-controls :global(button:hover) {
+  .fig-controls :global(button:hover:not(:disabled)) {
     border-color: var(--ink-strong);
+  }
+  .fig-controls :global(button:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
   .fig-caption {
     font-family: var(--font-ui);

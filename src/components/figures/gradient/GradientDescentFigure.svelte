@@ -7,7 +7,8 @@
 
   // One-parameter regression: find w minimizing L(w) = Σ (w·xᵢ − yᵢ)² over 12
   // fixed points drawn from y = 0.8x + noise. SUM (not mean) keeps the bowl
-  // steep: learning rates beyond ~0.25 visibly oscillate, then diverge.
+  // steep. Oscillation begins around lr ≈ 0.21; genuine divergence needs
+  // lr > 2/L'' ≈ 0.43.
   const rng = mulberry32(9);
   const data = Array.from({ length: 12 }, () => {
     const px = rng() * 2 - 1;
