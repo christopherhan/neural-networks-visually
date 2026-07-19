@@ -1,0 +1,131 @@
+---
+number: 11
+title: Multi-Head Attention & the Transformer Block
+summary: One attention pass is one consultation habit - run several in parallel, give the result somewhere to think, and you have the block that every large model is built from.
+---
+
+import MathAside from '../../components/layout/MathAside.astro';
+import EngineerFooter from '../../components/layout/EngineerFooter.astro';
+import BlockAssembler from '../../components/figures/block/BlockAssembler.svelte';
+
+Chapter 10 built one attention pass as a committee consultation: every
+token publishes a query, a key, and a value, and each one walks away
+holding a blend of whatever it matched best. That's real, useful mixing —
+but it's still just *one* consultation, run *one* way. The projections
+$W_Q$, $W_K$, $W_V$ are fixed once training finishes, so every token asks
+its question through the same lens every time. One habit, applied
+everywhere.
+
+The fix is almost embarrassingly simple: run several consultations at
+once, each with its own small set of projections, and let them specialize
+differently. This site's toy model splits its 64-dimensional vectors into
+four 16-dimensional slices and runs a full, independent attention pass on
+each slice — four **heads**, each with its own $W_Q$, $W_K$, $W_V$, each
+free to learn its own notion of "what's worth attending to." You already
+watched this happen in chapter 10's head picker: layer 2's head 3 latched
+onto a confident, decisive story about who a pronoun refers to, while
+layer 1's head 1 came back smeared and inconclusive across word
+fragments. Same sentence, same layer's worth of tokens, four different
+habits — because each head genuinely is a separate small attention
+computation, not four views of one. **Multi-head attention** just runs
+all four in parallel and glues the results back together side by side,
+one wide vector again, same shape it started as.
+
+That solves "one point of view," but a second limitation remains, and
+it's structural, not a matter of adding more heads. Attention only
+*mixes* — every output is a weighted blend of other tokens' value
+vectors, which means it can rearrange and combine information across the
+sequence, but it never does any real computation on a single token's
+content in isolation. There's no step anywhere in attention that takes
+one vector and transforms it through a nonlinearity. For that, the block
+adds a second half: a small two-layer network — chapter 5's species,
+exactly — applied independently to every token's vector, one at a time,
+with no mixing across positions at all. The pattern across one full block
+is **mix, then think, then mix, then think**: attention mixes across
+tokens, the MLP thinks per token, and the two halves alternate, each
+depending on what the other just did.
+
+Stacking several of these blocks is where the payoff lives, but stacking
+is exactly what chapter 6 warned doesn't come for free. Multiply blame
+back through eight, twelve, ninety-six layers and a product of
+sub-unity factors vanishes; saturate a squashing function anywhere in
+that chain and its slope goes flat. The transformer block carries
+chapter 6's two fixes built directly into its shape. Every sublayer sits
+behind a **residual connection** — the exact bypass lane chapter 6
+introduced, $x \mathrel{+}= \text{sublayer}(x)$ instead of $x =
+\text{sublayer}(x)$ — so a gradient headed backward can always take the
+"+1" path and skip the sublayer entirely if that's the easiest route
+home. And every sublayer's *input* passes through **LayerNorm** first,
+resetting each token's vector to mean 0 and spread 1 before anything
+multiplies it, the same anti-saturation move as choosing a live-sloped
+activation, just applied to the running activations instead of the
+function shape. Neither trick makes any single block smarter. Both exist
+purely so that stacking many blocks stays trainable at all.
+
+<BlockAssembler client:visible />
+
+Step through it once and the shape should feel familiar in pieces —
+attention from chapter 10, an MLP from chapter 5, addition and
+normalization from chapter 6 — assembled into one repeating unit. That
+repetition is the whole point. This block, exactly as diagrammed above,
+is the building block underneath GPT-2, GPT-3, GPT-4, Claude, K3, and
+essentially every large language model in production. The difference
+between a small model and a frontier one is overwhelmingly *how many
+times this diagram repeats* — 12 blocks, 96 blocks, over 100 blocks — and
+how wide each vector is at every stage, not some fundamentally different
+architecture hiding underneath. Part IV picks apart what changes at that
+scale, starting with the one piece of this diagram frontier labs most
+often swap out: chapter 15 replaces the MLP half with a **mixture of
+experts** — many small MLPs with a router picking which ones fire per
+token, instead of one MLP firing on every token, every time.
+
+<MathAside>
+
+Multi-head attention concatenates $h$ independent attention outputs and
+projects the result back down: $\text{MultiHead}(X) =
+\text{Concat}(\text{head}_1, \ldots, \text{head}_h)\,W_O$, where each
+$\text{head}_i = \text{Attention}(XW_Q^{(i)}, XW_K^{(i)}, XW_V^{(i)})$ is
+ordinary single-head attention run on that head's own slice of $X$. A
+full block, in the pre-norm form this site's model uses, is two residual
+updates: $x \mathrel{+}= \text{MHA}(\text{LN}(x))$, then $x
+\mathrel{+}= \text{MLP}(\text{LN}(x))$.
+
+This site's model runs $d_{\text{model}} = 64$, $h = 4$ heads of dimension
+16, and an MLP hidden width of 256. Count the learned weights in one
+block: the four projections $W_Q, W_K, W_V, W_O$ are each $64 \times 64$,
+so $4 \cdot 64 \cdot 64 = 16{,}384$; the MLP's two layers are $64 \times
+256$ and $256 \times 64$, so $2 \cdot 64 \cdot 256 = 32{,}768$. Add the
+(tiny) LayerNorm parameters and one block costs roughly **49,000**
+weights. GPT-3 uses the identical formula at $d_{\text{model}} =
+12{,}288$: the same $12 \cdot d_{\text{model}}^2$ shape puts a single
+block at **over 1.8 billion** parameters — before counting any of its 96
+other blocks. Same arithmetic, four orders of magnitude apart.
+
+</MathAside>
+
+<EngineerFooter>
+
+What should jump out about this block is how *regular* it is: fixed input
+shape in, identical shape out, the same two sublayers every time, no
+branching logic, no data-dependent control flow. That regularity is
+precisely why accelerators and compilers love transformers — a chip (or a
+compiler like XLA or Triton) can specialize hard for one repeating
+pattern of matrix multiplies instead of handling a zoo of different layer
+types, and the exact same kernel gets reused 96 times over with just
+different weights loaded in.
+
+It's also worth noticing where the cross-token communication actually
+lives: attention is the *only* operation in this entire block — in the
+entire model — that lets one token's computation see another token's
+vector. The MLP, LayerNorm, and the residual adds all work strictly
+per-token, per-dimension. Every bit of "this word affects that word"
+reasoning a transformer performs has to route through an attention
+sublayer; nothing else in the architecture is capable of it.
+
+And bank this ratio for chapter 15: at typical widths the MLP's $8 \cdot
+d_{\text{model}}^2$ dwarfs attention's $4 \cdot d_{\text{model}}^2$ — about
+**two-thirds of a block's parameters sit in the MLP**, only a third in
+attention. Mixture-of-experts works precisely because the MLP is the
+expensive two-thirds being replaced, not the cheap remainder.
+
+</EngineerFooter>
