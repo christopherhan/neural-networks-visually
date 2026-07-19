@@ -97,7 +97,10 @@ export class Value {
   }
 
   /** Backpropagate: seed d(this)/d(this) = 1 and apply the chain rule in
-   *  reverse topological order. */
+   *  reverse topological order.
+   *
+   *  Gradients ACCUMULATE (`+=`): before an independent backward pass over
+   *  the same Values, the caller must reset grads (see zeroGrad in network.ts). */
   backward(): void {
     const topo: Value[] = [];
     const visited = new Set<Value>();
