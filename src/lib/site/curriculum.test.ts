@@ -34,6 +34,13 @@ describe('curriculum', () => {
     expect([count(1), count(2), count(3), count(4)]).toEqual([5, 3, 6, 4]);
   });
 
+  it('part assignments are contiguous and non-decreasing', () => {
+    const parts = CURRICULUM.map((c) => c.part);
+    for (let i = 1; i < parts.length; i++) {
+      expect(parts[i], `chapter ${i + 1} part`).toBeGreaterThanOrEqual(parts[i - 1]);
+    }
+  });
+
   it('looks up chapters by slug and number', () => {
     expect(chapterBySlug('the-neuron')?.number).toBe(1);
     expect(chapterByNumber(10)?.slug).toBe('attention');
