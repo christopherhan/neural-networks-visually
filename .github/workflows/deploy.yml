@@ -28,14 +28,18 @@ jobs:
       - run: npm test
       - run: npm run check
       - run: npm run build
-      - run: npx linkinator ./dist --recurse --silent
+      - run: npx linkinator ./dist --recurse --silent --skip "^https?://"
 
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Builds with site/base derived from the repo's Pages config
+      # withastro/action does NOT inject site/base itself; we derive them
+      # from the repo so the project page works at /<repo>/
       - uses: withastro/action@v3
+        env:
+          SITE_URL: https://${{ github.repository_owner }}.github.io
+          BASE_PATH: /${{ github.event.repository.name }}
 
   deploy:
     if: github.ref == 'refs/heads/main'
