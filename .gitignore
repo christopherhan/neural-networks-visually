@@ -4,3 +4,6 @@ dist/
 .DS_Store
 .astro/
 .claude/
+tools/train-tiny-transformer/corpus_ids.json
+tools/train-tiny-transformer/train.log
+__pycache__/
