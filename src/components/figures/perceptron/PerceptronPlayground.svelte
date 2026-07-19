@@ -54,7 +54,7 @@
 </script>
 
 <FigureShell
-  title="Build a perceptron"
+  title="Build a neuron"
   caption="Drag the sliders to move the decision line. Score: how many points end up on their correct side."
 >
   {#snippet children()}

@@ -15,8 +15,7 @@ if (0.6 * temperature + 0.4 * humidity > 75) turnOnFan();
 ```
 
 — you've built one: a weighted sum of inputs compared against a threshold.
-That is the perceptron, the 1958 original, and it is the atom this entire
-site builds from.
+That is a **neuron**, and it is the atom this entire site builds from.
 
 Look at the shape of that `if` statement. Each input gets a **weight** — a
 number saying how much it matters. Temperature matters more than humidity
@@ -46,9 +45,20 @@ Now click **Try XOR**.
 The pattern is simple — same-sign coordinates are one class, opposite-sign
 the other — but no line you can draw gets them all. You can prove it to
 yourself in about thirty seconds of frustrated slider-dragging. This is the
-**XOR wall**, and it is not a toy problem: in 1969 Minsky and Papert used
-exactly this limitation to argue perceptrons were a dead end, and neural
-network research froze for a decade.
+**XOR wall**, and it is not a toy problem — it once froze the entire field.
+
+<MathAside title="A bit of history">
+
+The hard-threshold neuron you just played with has a famous name: the
+**perceptron**, built by Frank Rosenblatt in 1958 as a room-sized machine
+the New York Times promised would soon "walk, talk, see, write." In 1969,
+Marvin Minsky and Seymour Papert used exactly the XOR limitation you just
+experienced to argue perceptrons were a dead end — and neural network
+research froze for roughly a decade. You'll occasionally still see
+"multi-layer perceptron" (MLP) used as a name for the stacked networks of
+chapter 6; on this site we just say *neuron* and *network*.
+
+</MathAside>
 
 The escape route has two parts, and they are the next two ideas in this
 course: activation functions that *bend* (so decisions aren't stuck being
@@ -60,7 +70,7 @@ can draw anything.
 
 A neuron computes $y = \sigma(w \cdot x + b)$, where $w$ is the weight
 vector, $b$ is the bias, and $\sigma$ is an activation function. The
-perceptron's $\sigma$ is a hard step: output $1$ if $w \cdot x + b > 0$,
+figure's $\sigma$ is a hard step: output $1$ if $w \cdot x + b > 0$,
 else $-1$. The decision boundary $w \cdot x + b = 0$ is a hyperplane —
 a line in 2D, a plane in 3D — and $w$ is its normal vector: it points
 perpendicular to the boundary, toward the positive class.
