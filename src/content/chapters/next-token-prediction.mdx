@@ -1,0 +1,134 @@
+---
+number: 13
+title: Next-Token Prediction
+summary: Every chapter in this tower was building toward one humble act - guess what comes next - and generation is just that guess, looped back on itself.
+---
+
+import MathAside from '../../components/layout/MathAside.astro';
+import EngineerFooter from '../../components/layout/EngineerFooter.astro';
+import GenerationLab from '../../components/figures/generation/GenerationLab.svelte';
+
+Take stock of what's been built. Chapter 9 turned words into vectors a
+network can compute on. Chapter 10 let every token look back at every
+earlier one, directly, no bottleneck. Chapter 11 wrapped that lookback in
+a block — mix, then think, then mix, then think — and showed that stacking
+many of them is the whole architecture. Chapter 12 smuggled word order in
+as data so the mixing wouldn't be blind to sequence. Four chapters, a real
+tower of machinery. And it all ends in something almost embarrassingly
+modest: one probability, for every token in the vocabulary, answering a
+single question — *what comes next?*
+
+That question is the entire training objective. Not part of it, not one
+term in a larger loss — the whole thing. Feed the model a mountain of
+text, ask it, at every position, to predict the token that actually comes
+next, and grade the prediction. Nothing about *how* to grade it or *how*
+to improve it needed inventing here: the loss is a landscape exactly like
+chapter 3's, just cross-entropy over a softmax instead of squared error;
+the gradients that improve it flow backward exactly the way chapter 4
+worked out, unmodified. Scale a small idea up — more data, more parameters,
+more compute — and next-token prediction on ordinary text is the recipe
+behind every large language model in production. Nothing new was needed.
+Just scale.
+
+<GenerationLab client:visible />
+
+Press Start and watch the bars, not the words. At every step the model
+isn't choosing anything — it's pricing every token in its vocabulary,
+all 383 of them, and softmax turns those prices into a spending budget
+that sums to one. Sampling is a weighted dice roll against that budget:
+the token with the fattest bar wins most often, but it isn't guaranteed
+to win, and the accent-red bar marking whatever actually got sampled will
+occasionally land on something other than the tallest one. That's not a
+bug — it's the mechanism working exactly as designed.
+
+The temperature slider reshapes the price list before the dice gets
+rolled. Drag it down toward 0.1 and press Next token a few times: one
+bar swells to dominate almost everything, the model reliably plays it
+safe, and if you keep generating you'll watch it fall into loops — the
+same phrase, or something close to it, recurring because the safest bet
+after a safe bet is often the same safe bet again. Push it up toward 2.0
+instead and the bars flatten out — long-shot tokens that were priced at
+a fraction of a percent suddenly have a real shot, and generation
+degrades into word salad, grammatically unmoored. Somewhere around 0.8,
+the model's default here, is a sweet spot: confident enough to stay
+coherent, loose enough to stay interesting. There's no formula for the
+"right" temperature — it's a taste knob, not a correctness knob.
+
+Here's the strange loop underneath all of it: generation is nothing but
+prediction, fed back into itself. Sample one token, glue it onto the end
+of the sequence, run the whole forward pass again as if that token had
+always been there, predict the next one, repeat. The model never plans a
+sentence, never holds a paragraph's structure in mind, never "decides" to
+open a quotation it intends to close three tokens later — at every single
+step it is solving the exact same narrow problem chapter 9 through 12
+built the machinery for: given what's come so far, price what comes next.
+And yet run that loop enough times and structure emerges anyway —
+capitalized sentence starts, matched quotation marks, characters staying
+in character — not because any of it was planned, but because those
+patterns were common enough in the training text that pricing "what comes
+next" well enough, over and over, reproduces them as a side effect.
+
+Worth being honest about what this site's toy model actually produces.
+It trained for a few minutes on a laptop over roughly half a megabyte of
+Gutenberg text — mostly *Alice in Wonderland* — and it shows. Generate
+long enough and you'll see something like: *"Alice went on with her
+sward! Alice remarked. No more usult, said the Gryphon."* Real
+punctuation, real capitalization, real character names, a cadence that's
+recognizably Wonderland — sitting right next to invented, un-English
+words like "sward" and "usult" that are simply what happens when a
+383-token vocabulary and a few minutes of training meet a genuinely random
+dice roll. GPT-4 is not a different mechanism. It is this exact loop —
+tokenize, forward pass, price every token, sample, append, repeat — run
+on a vocabulary of hundreds of thousands of tokens, a model with hundreds
+of billions of parameters, and training data measured in trillions of
+tokens, for the equivalent of billions of GPU-hours. The gap between
+*"Alice went on with her sward"* and a frontier model's fluent paragraph
+is entirely a gap of scale and training, not of idea. Chapter 14 asks what
+it actually takes to close that gap.
+
+<MathAside>
+
+Temperature-scaled softmax: $p_i = \dfrac{\exp(z_i / T)}{\sum_j \exp(z_j /
+T)}$, where $z$ is the raw logit vector for the next token and $T$ is the
+temperature. As $T \to 0$, the largest logit dominates the sum completely
+and $p$ collapses onto a one-hot vector at $\arg\max(z)$ — sampling
+becomes deterministic, always the single most likely token. As $T \to
+\infty$, every ratio $z_i/T \to 0$ and $p$ flattens toward the uniform
+distribution — every token, however unlikely, becomes equally probable.
+$T = 1$ recovers plain softmax, untouched.
+
+Generation's full loop is an **autoregressive factorization** of a
+sequence's joint probability into one-token-at-a-time conditionals:
+$p(x_1, \ldots, x_n) = \prod_{i=1}^{n} p(x_i \mid x_{<i})$. Training
+teaches the model to estimate each factor, $p(x_i \mid x_{<i})$, well;
+generation is simply sampling from that chain of factors, left to right,
+one at a time.
+
+</MathAside>
+
+<EngineerFooter>
+
+Every token generated costs one full forward pass through the entire
+model — all layers, all attention heads, the whole stack chapters 9
+through 12 built, run again from scratch for a sequence that's now one
+token longer. That's the mechanical reason every commercial API prices
+output tokens higher than input tokens: an input token gets processed
+once, in a single batched pass over the whole prompt, but an output token
+demands its own dedicated forward pass, one at a time, sequentially,
+before the next one can even start.
+
+Recomputing every earlier token's key and value vectors at every step
+would make this far worse than it already is — and chapter 10's footer
+already flagged the fix: the **KV cache**, which chapter 16 covers in
+full, stores each token's key and value the moment they're computed and
+reuses them forever after, so generating token $t{+}1$ only does fresh
+work for the new token, not the whole sequence again.
+
+And the sampling knobs you'll see on every real API — **top-k** (only
+consider the $k$ highest-priced tokens), **top-p** / nucleus sampling
+(only consider the smallest set of tokens whose prices sum past $p$),
+temperature itself — are not new mechanisms. Every one of them is an
+edit to the price list computed above, applied after softmax and before
+the dice gets rolled. The loop underneath never changes.
+
+</EngineerFooter>
