@@ -114,7 +114,7 @@
   {/snippet}
 
   {#snippet controls()}
-    <label>learning rate <input type="range" min="0.005" max="0.4" step="0.005" bind:value={lr} /> {lr.toFixed(3)}</label>
+    <label>learning rate <input type="range" min="0.005" max="0.6" step="0.005" bind:value={lr} /> {lr.toFixed(3)}</label>
     <button type="button" onclick={step} disabled={diverged}>Step</button>
     <button type="button" onclick={togglePlay} disabled={diverged}>{playing ? 'Pause' : 'Play'}</button>
     <button type="button" onclick={reset}>Reset</button>
