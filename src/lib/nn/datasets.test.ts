@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { twoClouds, xorQuadrants } from './datasets';
+import { twoClouds, xorQuadrants, circles, moons, spiral, PLAYGROUND_DATASETS } from './datasets';
 
 describe('twoClouds', () => {
   it('is deterministic and returns 2n points, n per class', () => {
@@ -61,6 +61,79 @@ describe('xorQuadrants', () => {
     expect(counts.size).toBe(4);
     for (const c of counts.values()) {
       expect(c).toBeGreaterThanOrEqual(5);
+    }
+  });
+});
+
+describe('circles', () => {
+  it('is deterministic with half the points per class', () => {
+    const a = circles(60, 5);
+    expect(a).toEqual(circles(60, 5));
+    expect(a).toHaveLength(60);
+    expect(a.filter((p) => p.label === 1)).toHaveLength(30);
+  });
+
+  it('separates inner disk from outer ring by radius', () => {
+    for (const p of circles(60, 5)) {
+      const r = Math.hypot(p.x, p.y);
+      if (p.label === 1) expect(r).toBeLessThanOrEqual(0.36);
+      else expect(r).toBeGreaterThanOrEqual(0.6);
+    }
+  });
+});
+
+describe('moons', () => {
+  it('is deterministic, in-domain, with half the points per class', () => {
+    const a = moons(60, 6);
+    expect(a).toEqual(moons(60, 6));
+    expect(a.filter((p) => p.label === 1)).toHaveLength(30);
+    for (const p of a) {
+      expect(Math.abs(p.x)).toBeLessThanOrEqual(1.1);
+      expect(Math.abs(p.y)).toBeLessThanOrEqual(1.1);
+    }
+  });
+
+  it('is NOT linearly separable by any axis-aligned split (interleaved)', () => {
+    // The moons interleave: each class spans both sides of x=0.
+    const pts = moons(60, 6);
+    for (const label of [1, -1] as const) {
+      const xs = pts.filter((p) => p.label === label).map((p) => p.x);
+      expect(Math.min(...xs)).toBeLessThan(0);
+      expect(Math.max(...xs)).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('spiral', () => {
+  it('is deterministic, in-domain, with half the points per class', () => {
+    const a = spiral(80, 7);
+    expect(a).toEqual(spiral(80, 7));
+    expect(a.filter((p) => p.label === 1)).toHaveLength(40);
+    for (const p of a) {
+      expect(Math.abs(p.x)).toBeLessThanOrEqual(1.1);
+      expect(Math.abs(p.y)).toBeLessThanOrEqual(1.1);
+    }
+  });
+
+  it('arms grow outward — radius increases along each arm', () => {
+    const arm = spiral(80, 7).filter((p) => p.label === 1);
+    const rFirst = Math.hypot(arm[0].x, arm[0].y);
+    const rLast = Math.hypot(arm[arm.length - 1].x, arm[arm.length - 1].y);
+    expect(rLast).toBeGreaterThan(rFirst + 0.4);
+  });
+});
+
+describe('PLAYGROUND_DATASETS', () => {
+  it('exposes the five datasets, each deterministic and labeled ±1', () => {
+    const keys = Object.keys(PLAYGROUND_DATASETS);
+    expect(keys).toEqual(['clouds', 'xor', 'circles', 'moons', 'spiral']);
+    for (const key of keys as Array<keyof typeof PLAYGROUND_DATASETS>) {
+      const entry = PLAYGROUND_DATASETS[key];
+      expect(entry.label.length).toBeGreaterThan(0);
+      const a = entry.generate();
+      expect(a).toEqual(entry.generate());
+      expect(a.length).toBeGreaterThanOrEqual(30);
+      for (const p of a) expect([1, -1]).toContain(p.label);
     }
   });
 });
