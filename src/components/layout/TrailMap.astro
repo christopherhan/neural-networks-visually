@@ -18,6 +18,12 @@ const STOPS: Array<{ x: number; y: number }> = [
   { x: 480, y: 170 }, { x: 560, y: 100 },
 ];
 
+if (STOPS.length !== CURRICULUM.length) {
+  throw new Error(
+    `TrailMap: ${STOPS.length} stops but ${CURRICULUM.length} chapters — add/remove coordinates in STOPS`
+  );
+}
+
 const PART_COLORS: Record<number, string> = {
   1: 'var(--accent-blue)',
   2: 'var(--accent-green)',
@@ -35,38 +41,55 @@ const stops = CURRICULUM.map((chapter) => ({
 }));
 ---
 
-<figure class="trail sketch">
-  <svg viewBox="0 0 720 560" role="img" aria-label="Course trail map: 18 chapters from the neuron to frontier models">
-    <path d={pathD} fill="none" stroke="var(--line)" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round"></path>
-    {
-      stops.map(({ chapter, pos, color, written }) =>
-        written ? (
-          <a href={url(`chapters/${chapter.slug}/`)}>
-            <circle cx={pos.x} cy={pos.y} r="14" fill={color} />
-            <text x={pos.x} y={pos.y + 4} text-anchor="middle" class="stop-num">{chapter.number}</text>
-            <text x={pos.x} y={pos.y + 32} text-anchor="middle" class="stop-title">{chapter.title}</text>
-          </a>
-        ) : (
-          <g class="soon">
-            <circle cx={pos.x} cy={pos.y} r="14" fill="none" stroke={color} stroke-width="2.5" stroke-dasharray="4 3" />
-            <text x={pos.x} y={pos.y + 4} text-anchor="middle" class="stop-num soon-num">{chapter.number}</text>
-            <text x={pos.x} y={pos.y + 32} text-anchor="middle" class="stop-title">{chapter.title}</text>
-          </g>
+<nav aria-label="Course chapters">
+  <figure class="trail sketch">
+    <svg viewBox="0 0 720 560" aria-labelledby="trail-map-title">
+      <title id="trail-map-title">Course trail map: 18 chapters from the neuron to frontier models</title>
+      <path d={pathD} fill="none" stroke="var(--line)" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round"></path>
+      {
+        stops.map(({ chapter, pos, color, written }) =>
+          written ? (
+            <a href={url(`chapters/${chapter.slug}/`)} aria-label={`Chapter ${chapter.number}: ${chapter.title}`}>
+              <circle cx={pos.x} cy={pos.y} r="24" fill="transparent" />
+              <circle cx={pos.x} cy={pos.y} r="14" fill={color} />
+              <text x={pos.x} y={pos.y + 4} text-anchor="middle" class="stop-num">{chapter.number}</text>
+              <text x={pos.x} y={pos.y + 32} text-anchor="middle" class="stop-title">{chapter.title}</text>
+            </a>
+          ) : (
+            <g class="soon">
+              <circle cx={pos.x} cy={pos.y} r="14" fill="none" stroke={color} stroke-width="2.5" stroke-dasharray="4 3" />
+              <text x={pos.x} y={pos.y + 4} text-anchor="middle" class="stop-num soon-num">{chapter.number}</text>
+              <text x={pos.x} y={pos.y + 32} text-anchor="middle" class="stop-title">{chapter.title}</text>
+            </g>
+          )
         )
-      )
-    }
-  </svg>
-  <figcaption>
+      }
+    </svg>
+    <figcaption>
+      {
+        PARTS.map((part) => (
+          <span class="legend-item">
+            <span class="legend-dot" style={`background: ${PART_COLORS[part.number]}`} />
+            Part {part.numeral}: {part.title}
+          </span>
+        ))
+      }
+    </figcaption>
+  </figure>
+  <ol class="trail-list">
     {
-      PARTS.map((part) => (
-        <span class="legend-item">
-          <span class="legend-dot" style={`background: ${PART_COLORS[part.number]}`} />
-          Part {part.numeral}: {part.title}
-        </span>
+      stops.map(({ chapter, written }) => (
+        <li>
+          {written ? (
+            <a href={url(`chapters/${chapter.slug}/`)}>{chapter.number}. {chapter.title}</a>
+          ) : (
+            <span class="soon-item">{chapter.number}. {chapter.title} (coming soon)</span>
+          )}
+        </li>
       ))
     }
-  </figcaption>
-</figure>
+  </ol>
+</nav>
 
 <style>
   .trail {
@@ -99,6 +122,10 @@ const stops = CURRICULUM.map((chapter) => ({
     stroke: var(--ink-strong);
     stroke-width: 3;
   }
+  a:focus-visible circle {
+    stroke: var(--ink-strong);
+    stroke-width: 3;
+  }
   figcaption {
     display: flex;
     flex-wrap: wrap;
@@ -119,5 +146,24 @@ const stops = CURRICULUM.map((chapter) => ({
     height: 10px;
     border-radius: 50%;
     display: inline-block;
+  }
+  .trail-list {
+    display: none;
+    list-style: none;
+    padding: 0;
+    font-family: var(--font-ui);
+    font-size: 0.95rem;
+    line-height: 2;
+  }
+  .soon-item {
+    color: var(--faint);
+  }
+  @media (max-width: 640px) {
+    figure.trail {
+      display: none;
+    }
+    .trail-list {
+      display: block;
+    }
   }
 </style>
