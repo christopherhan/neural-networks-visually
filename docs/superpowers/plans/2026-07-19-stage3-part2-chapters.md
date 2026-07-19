@@ -63,7 +63,10 @@ src/content/chapters/rnns-and-lstms.mdx                     (Task 3)
 
   function measure(d: number, act: Activation, seed: number): number[] {
     const sizes = [1, ...Array(d).fill(WIDTH), 1];
-    const mlp = new MLP(sizes, mulberry32(seed), act, 'tanh');
+    // Linear output layer: the loss gradient stays healthy at the top, so
+    // what the bars show is purely how the HIDDEN stack treats blame on the
+    // way down — saturated tanh starves it, ReLU passes/amplifies it.
+    const mlp = new MLP(sizes, mulberry32(seed), act, 'linear');
     for (const p of mlp.parameters()) p.data *= SCALE;
     const loss = mseLoss(mlp.forward([0.7]), [1]);
     loss.backward();
