@@ -29,6 +29,18 @@ jobs:
       - run: npm run check
       - run: npm run build
       - run: npx linkinator ./dist --recurse --silent --skip "^https?://(?!localhost)"
+      # Guard the deployed artifact shape: a base-path build must not emit
+      # unprefixed internal links (a site/base regression means 404s on Pages)
+      - name: Check base-path build
+        env:
+          SITE_URL: https://${{ github.repository_owner }}.github.io
+          BASE_PATH: /${{ github.event.repository.name }}
+        run: |
+          npm run build
+          if grep -rlE '(href|src)="/(chapters/|_astro/)' dist --include='*.html'; then
+            echo 'Unprefixed internal links found in base-path build' >&2
+            exit 1
+          fi
 
   build:
     runs-on: ubuntu-latest
