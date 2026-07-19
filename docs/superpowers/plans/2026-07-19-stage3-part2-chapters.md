@@ -44,60 +44,80 @@ src/content/chapters/rnns-and-lstms.mdx                     (Task 3)
   import type { Activation } from '../../../lib/nn/network';
   import { mulberry32 } from '../../../lib/nn/rng';
 
-  // Build a deep net with DELIBERATELY oversized weights (the world before
-  // careful initialization), push one example through, backprop once, and
-  // measure the mean |gradient| of each layer's weights. The real engine
-  // does the measuring — nothing here is illustrative fakery.
-  //
-  // Why the ×2 weight scale: with big weighted sums, tanh parks on its flat
-  // shoulders where its slope ≈ 0 — the classic saturation-driven vanishing
-  // gradient. ReLU has no shoulders (slope 1 when active), so the same
-  // architecture passes blame undamped — and with big weights, amplifies it.
-  let depth = $state(5); // number of hidden layers, 1..8
+  // THE GRADIENT LOTTERY. Deep nets multiply blame through every layer on
+  // the way back. With naive random weights that product withers or blows
+  // up — which one is luck of the draw. Proper initialization rigs the
+  // lottery so the product stays near 1. Every number here comes from the
+  // real engine: build a net, backprop once, measure per-layer |grad|.
+  let depth = $state(6); // hidden layers, 1..8
   let activation: Activation = $state('tanh');
-  let seedOffset = $state(0);
+  let properInit = $state(false);
+  let seedIndex = $state(0);
 
   const WIDTH = 8;
-  const SCALE = 2;
-  const FLOOR = 1e-6;
+  const SEEDS = [11, 12, 13, 14, 15, 16, 17];
+  const FLOOR = 1e-9;
+  // Raw init is U(-1,1), std ≈ 0.577 — the pre-2010 default. "Proper"
+  // rescales toward Xavier (tanh) / He (relu) std for fan-in 8.
+  // NOTE TO IMPLEMENTER: these factors and BAND are starting points —
+  // verify empirically per the task's verification step and adjust within
+  // the allowed ranges there; the committed constants must be the verified ones.
+  const INIT_FACTOR: Record<Activation, number> = { tanh: 0.61, relu: 0.87, linear: 1 };
+  const BAND = 15;
 
-  function measure(d: number, act: Activation, seed: number): number[] {
-    const sizes = [1, ...Array(d).fill(WIDTH), 1];
-    // Linear output layer: the loss gradient stays healthy at the top, so
-    // what the bars show is purely how the HIDDEN stack treats blame on the
-    // way down — saturated tanh starves it, ReLU passes/amplifies it.
-    const mlp = new MLP(sizes, mulberry32(seed), act, 'linear');
-    for (const p of mlp.parameters()) p.data *= SCALE;
+  function measure(d: number, act: Activation, proper: boolean, seed: number): number[] {
+    // Linear output: the loss gradient stays healthy at the top, so bars
+    // show purely how the HIDDEN stack treats blame on the way down.
+    const mlp = new MLP([1, ...Array(d).fill(WIDTH), 1], mulberry32(seed), act, 'linear');
+    if (proper) {
+      for (const p of mlp.parameters()) p.data *= INIT_FACTOR[act];
+    }
     const loss = mseLoss(mlp.forward([0.7]), [1]);
     loss.backward();
     return mlp.layers.map((layer) => {
       const params = layer.parameters();
-      const mean =
-        params.reduce((s, p) => s + Math.abs(p.grad), 0) / params.length;
+      const mean = params.reduce((s, p) => s + Math.abs(p.grad), 0) / params.length;
       return Math.max(mean, FLOOR);
     });
   }
 
-  const grads = $derived(measure(depth, activation, 11 + seedOffset));
-  const ratio = $derived(grads[grads.length - 1] / grads[0]);
+  type Verdict = 'vanishing' | 'exploding' | 'balanced';
+  function verdictOf(g: number[]): Verdict {
+    const r = g[g.length - 1] / g[0];
+    return r > BAND ? 'vanishing' : r < 1 / BAND ? 'exploding' : 'balanced';
+  }
 
-  // Log-scale bars: FLOOR (1e-6) → 0px tall, 1 → full height.
+  const grads = $derived(measure(depth, activation, properInit, SEEDS[seedIndex]));
+  const verdict = $derived(verdictOf(grads));
+  const tally = $derived.by(() => {
+    const counts = { vanishing: 0, exploding: 0, balanced: 0 };
+    for (const s of SEEDS) {
+      counts[verdictOf(measure(depth, activation, properInit, s))] += 1;
+    }
+    return counts;
+  });
+
+  // Log-scale bars spanning 1e-9 .. 1e3.
   const H = 150;
   const barH = (g: number) => {
-    const t = (Math.log10(g) + 6) / 6; // 1e-6..1 → 0..1
+    const t = (Math.log10(g) + 9) / 12;
     return Math.max(2, Math.min(1, Math.max(0, t)) * H);
   };
-  const barW = $derived(Math.min(44, 280 / grads.length));
+  const barW = $derived(Math.min(40, 280 / grads.length));
 
-  const fmtExp = (v: number) => v.toExponential(1).replace('e-', 'e−');
+  const VERDICT_COLOR: Record<Verdict, string> = {
+    vanishing: 'var(--accent-gold-ink)',
+    exploding: 'var(--accent-red)',
+    balanced: 'var(--accent-green)',
+  };
 </script>
 
 <FigureShell
-  title="Where gradients go to die"
-  caption="Mean |gradient| of each layer's weights after one backward pass, log scale. Layer 1 is the input side — farthest from the loss. Weights drawn deliberately large (the world before careful initialization — see the engineer's footnote)."
+  title="The gradient lottery"
+  caption="Mean |gradient| of each layer's weights after one backward pass, log scale. Layer 1 is the input side — farthest from the loss. Re-roll to draw new random weights."
 >
   {#snippet children()}
-    <svg viewBox="0 0 340 200" aria-label="Bar chart of gradient magnitude per layer; earlier layers receive smaller gradients with tanh">
+    <svg viewBox="0 0 340 200" aria-label="Bar chart of gradient magnitude per layer for the current random draw">
       {#each grads as g, i}
         {@const x = 30 + i * (barW + 8)}
         <rect
@@ -117,22 +137,23 @@ src/content/chapters/rnns-and-lstms.mdx                     (Task 3)
     </svg>
 
     <p class="readout">
-      output layer {fmtExp(grads[grads.length - 1])} &nbsp;→&nbsp; layer 1
-      <strong>{fmtExp(grads[0])}</strong>
-      {#if ratio > 30}
-        <span class="shrunk">
-          — the far layer's signal is <strong>{Math.round(ratio).toLocaleString()}×</strong> weaker
-        </span>
-      {/if}
+      draw {seedIndex + 1}/{SEEDS.length}:
+      <strong style={`color: ${VERDICT_COLOR[verdict]}`}>{verdict}</strong>
+      &nbsp;·&nbsp; across all {SEEDS.length} draws:
+      {tally.vanishing} vanish · {tally.exploding} explode · {tally.balanced} balanced
     </p>
 
-    {#if activation === 'tanh' && depth >= 6 && ratio > 50}
+    {#if properInit && tally.balanced >= 5}
       <p class="note">
-        Each tanh multiplies passing blame by its local slope — and with big
-        weighted sums, tanh sits on its flat shoulders where that slope is
-        nearly zero. Stack enough of them and the early layers barely hear
-        about their mistakes. Now click <strong>ReLU</strong> and watch the
-        same architecture pass blame straight through.
+        Same architecture, same randomness — but with weights scaled to keep
+        each layer's product near 1, nearly every draw comes out balanced.
+        Initialization doesn't win the lottery; it <strong>rigs</strong> it.
+      </p>
+    {:else if !properInit && tally.balanced <= 2 && depth >= 5}
+      <p class="note">
+        With naive ±1 weights, almost no draw is balanced — blame either
+        withers to nothing before reaching layer 1 or blows up on the way.
+        Flip on <strong>scaled init</strong> and re-roll.
       </p>
     {/if}
   {/snippet}
@@ -155,7 +176,15 @@ src/content/chapters/rnns-and-lstms.mdx                     (Task 3)
     >
       ReLU
     </button>
-    <button type="button" onclick={() => (seedOffset = (seedOffset + 1) % 7)}>
+    <button
+      type="button"
+      class:active={properInit}
+      aria-pressed={properInit}
+      onclick={() => (properInit = !properInit)}
+    >
+      {properInit ? 'Scaled init (Xavier/He)' : 'Naive init (±1)'}
+    </button>
+    <button type="button" onclick={() => (seedIndex = (seedIndex + 1) % SEEDS.length)}>
       Re-roll weights
     </button>
   {/snippet}
@@ -173,9 +202,6 @@ src/content/chapters/rnns-and-lstms.mdx                     (Task 3)
     text-align: center;
     color: var(--muted);
     margin: 0.5rem 0 0;
-  }
-  .shrunk {
-    color: var(--accent-gold-ink);
   }
   .note {
     font-family: var(--font-ui);
@@ -198,7 +224,7 @@ src/content/chapters/rnns-and-lstms.mdx                     (Task 3)
 ---
 number: 6
 title: "Going Deep: MLPs"
-summary: Stacking layers buys expressive power - and quietly starves the layers that need feedback most.
+summary: Stacking layers buys expressive power - and turns training into a lottery you must rig.
 ---
 
 import MathAside from '../../components/layout/MathAside.astro';
@@ -221,35 +247,37 @@ lives.
 
 So: stack twenty layers and profit? Not so fast. Remember how blame travels
 (chapter 4): backward through every operation, *multiplied* by each local
-slope along the way. And tanh has an Achilles' heel: feed it a large sum
-and it parks on its flat shoulders, where its slope is nearly **zero** —
-you saw those shoulders yourself in chapter 2. In a deep stack each layer's
-outputs feed the next layer's sums, so with any carelessness about weight
-sizes, saturation somewhere is almost guaranteed. Blame that crosses eight
-saturated tanhs gets multiplied by eight near-zeros. Watch what that does:
+slope and weight along the way. A product of many numbers is a fragile
+thing — unless each factor sits close to 1, it withers toward zero or blows
+up toward infinity. Which fate you get depends on the weights, and before
+training has even begun, the weights are random. Deep learning starts, in
+other words, by buying a lottery ticket:
 
 <GradientFlowFigure client:visible />
 
-Drag the depth up with tanh selected. The bars are per-layer gradient
-strength — the learning signal each layer receives — on a log scale. By
-layer eight the early layers are getting a signal thousands of times weaker
-than the output layer. They're effectively frozen: the layers closest to
-the *input*, the ones that must learn the most basic features, hear the
-faintest whisper of what went wrong. This is the **vanishing gradient
-problem**, the great villain of 1990s neural networks — the same wall the
-tanh damping hinted at in chapter 4.
+Set depth to eight and hit **Re-roll weights** a few times. Each draw is a
+fresh random network; the bars show the learning signal each layer
+receives. Some draws *vanish*: the early layers — the ones that must learn
+the most basic features — get a whisper thousands of times fainter than the
+output layer, and are effectively frozen. Other draws *explode*: the early
+layers drown in amplified noise instead. Balanced draws, where every layer
+hears roughly the same volume, are the rare jackpot — the tally under the
+figure keeps score. This is the **vanishing/exploding gradient problem**,
+the great villain of 1990s neural networks, and the reason "just stack more
+layers" failed for a decade. With tanh, the flat shoulders you met in
+chapter 2 damp the product toward zero; large weights shove it the other
+way; landing in between by luck, eight factors deep, almost never happens.
 
-Now click ReLU. Its slope is exactly 1 wherever it's active — there are no
-shoulders to get stuck on, so blame passes through undamped. The bars level
-out, and often tilt the *other* way: undamped blame flowing through large
-weights can grow layer over layer — the mirror-image **exploding gradient**
-problem. Depth is a knife that cuts both ways; ReLU merely stops it cutting
-toward zero. Taming both directions took ReLU *plus* careful weight
-initialization *plus* (later) skip connections — and together they're a
-large part of why "deep" learning became possible at all.
-
-Hit "Re-roll weights" a few times — the pattern survives every draw. It's
-not bad luck; it's arithmetic.
+Now the fixes — and notice they are engineering, not mathematics. Click
+**Scaled init**: same architecture, same randomness, but every weight is
+shrunk so each layer's contribution to the product sits near 1. That's
+Xavier/He initialization — what every framework quietly does today — and
+nearly every draw now comes out balanced. Initialization doesn't win the
+lottery; it rigs it. Then try **ReLU**: slope exactly 1 wherever it's
+active, no shoulders to damp the product — which is why it pairs so
+naturally with scaled init and became deep learning's default activation.
+Add (later) skip connections, and depth finally became affordable — a large
+part of why "deep" learning happened at all.
 
 <MathAside>
 
@@ -271,10 +299,9 @@ match the structure of the data itself.
 
 A deep net's backward pass is a chain of matrix products; vanishing/
 exploding gradients are just the condition number of that chain. The
-figure's weights are deliberately drawn oversized — the pre-2010 default —
-which is exactly what modern initialization exists to prevent: Xavier/He
-init scales weights by fan-in so per-layer products start near 1 and tanh
-stays off its shoulders. The rest of the toolkit is equally unmagical:
+figure's naive ±1 init is the pre-2010 default; its "scaled" toggle is
+Xavier/He — scale weights by fan-in so per-layer products start near 1 and
+tanh stays off its shoulders. The rest of the toolkit is equally unmagical:
 ReLU-family activations (slope 1), normalization layers, and residual
 connections — an identity "bypass lane" letting gradients skip the
 multiplications entirely. You'll meet that last idea again inside every
