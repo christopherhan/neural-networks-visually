@@ -22,6 +22,8 @@ export function createTicker(tick: () => void, options: TickerOptions = {}): Tic
 
   const loop = (t: number) => {
     id = raf(loop);
+    // Anchor to the actual frame time (not last += interval): after a
+    // backgrounded-tab stall this yields ONE catch-up tick, never a burst.
     if (t - last >= interval) {
       last = t;
       tick();

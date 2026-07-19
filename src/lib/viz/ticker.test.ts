@@ -63,4 +63,24 @@ describe('createTicker', () => {
     t.stop();
     expect(t.running).toBe(false);
   });
+
+  it('handles stop() called from inside the tick callback', () => {
+    const frames = fakeRaf();
+    let ticks = 0;
+    const t = createTicker(
+      () => {
+        ticks++;
+        if (ticks === 2) t.stop();
+      },
+      { fps: 1000, raf: frames.raf, caf: frames.caf }
+    );
+    t.start();
+    frames.pump(0);
+    frames.pump(10);
+    expect(ticks).toBe(2);
+    expect(t.running).toBe(false);
+    expect(frames.scheduled).toBe(0);
+    frames.pump(20);
+    expect(ticks).toBe(2);
+  });
 });
