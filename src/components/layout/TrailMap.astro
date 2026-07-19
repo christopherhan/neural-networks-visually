@@ -51,7 +51,7 @@ const stops = CURRICULUM.map((chapter) => ({
           written ? (
             <a href={url(`chapters/${chapter.slug}/`)} aria-label={`Chapter ${chapter.number}: ${chapter.title}`}>
               <circle cx={pos.x} cy={pos.y} r="24" fill="transparent" />
-              <circle cx={pos.x} cy={pos.y} r="14" fill={color} />
+              <circle class="stop-dot" cx={pos.x} cy={pos.y} r="14" fill={color} />
               <text x={pos.x} y={pos.y + 4} text-anchor="middle" class="stop-num">{chapter.number}</text>
               <text x={pos.x} y={pos.y + 32} text-anchor="middle" class="stop-title">{chapter.title}</text>
             </a>
@@ -118,11 +118,11 @@ const stops = CURRICULUM.map((chapter) => ({
   .soon .stop-title {
     fill: var(--faint);
   }
-  a:hover circle {
+  a:hover .stop-dot {
     stroke: var(--ink-strong);
     stroke-width: 3;
   }
-  a:focus-visible circle {
+  a:focus-visible .stop-dot {
     stroke: var(--ink-strong);
     stroke-width: 3;
   }
