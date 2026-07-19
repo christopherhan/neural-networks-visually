@@ -1182,3 +1182,21 @@ git commit -m "feat: perceptron playground figure and full chapter 1 content"
 
 - Chapters 2–5, the Training Playground, circles/moons/spiral datasets, decision-boundary heatmap rendering, ScrollStage scrollytelling — all Stage 2b.
 - Any change to the deploy pipeline (unchanged from Stage 1).
+
+## Addendum: review-driven deviations (recorded post-execution)
+
+Canonical for later stages:
+
+1. **RNG sequence is a public contract.** `rng.test.ts` pins golden values for `mulberry32(42)`. Changing the algorithm — or the *number of draws* an init scheme consumes (e.g. switching weight init from uniform to gaussian) — breaks downstream seed-pinned tests (XOR convergence, dataset shapes) and requires re-pinning seeds deliberately.
+2. **XOR test seed is 1** (42 doesn't converge with [2,8,1]/lr 0.3/800 epochs); `xorQuadrants` default seed is **3** (seed 2 is visually lopsided: 18 points in one quadrant). A quadrant-balance test guards the default.
+3. **`backward()` docs the accumulation contract** — callers must `zeroGrad` between independent passes.
+4. **Chapter 1 prose**: the EngineerFooter must not claim the perceptron figure runs on the autograd engine (it computes sums inline); the honest forward-reference wording is in the committed MDX.
+5. **Figure defaults open as a near-miss, not broken**: playground DEFAULTS {w1:0.5, w2:0.5, b:-0.7} = 60% on clouds, verified empirically. New figures should open 50–70% "solvable", never below chance.
+
+### House rules for all Stage 2b–5 figures (decided once, here)
+
+- **SVG data-point tooltips** (`<title>`) are hover-only progressive enhancement — acceptable ONLY when the information is redundantly available (color + rings + text readout). If a tooltip carries non-redundant data, the element must be focusable with an accessible name.
+- **Class/category encoding**: color + at least one redundant channel (position, ring, or text readout). Prefer adding a shape distinction when points overlap heavily.
+- **Range inputs**: wrap in `<label>` (implicit association). If the visible value readout creates a noisy accessible name, prefer static `aria-label` + `aria-valuetext`.
+- **Islands**: `client:visible`, SSR initial state as the no-JS fallback, wrapped in `FigureShell` (title/caption/children/controls snippets). Deterministic seeds only.
+- **Stage 2b perf note**: `trainStep` allocates the whole graph per step (~1.3ms for [2,8,1]×100 — fine). If slider-scrub jank appears, cache `parameters()` and consider batch predict; don't optimize preemptively.
