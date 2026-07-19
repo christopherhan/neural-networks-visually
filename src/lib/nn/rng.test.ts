@@ -14,6 +14,13 @@ describe('mulberry32', () => {
     expect(mulberry32(1)()).not.toBe(mulberry32(2)());
   });
 
+  it('matches pinned golden values (sequence is a public contract)', () => {
+    const rng = mulberry32(42);
+    expect(rng()).toBeCloseTo(0.6011037519201636, 12);
+    expect(rng()).toBeCloseTo(0.44829055899754167, 12);
+    expect(rng()).toBeCloseTo(0.8524657934904099, 12);
+  });
+
   it('emits values in [0, 1)', () => {
     const rng = mulberry32(7);
     for (let i = 0; i < 1000; i++) {

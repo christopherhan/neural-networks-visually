@@ -15,6 +15,7 @@ export function mulberry32(seed: number): Rng {
 
 /** Standard-normal sample via Box–Muller. */
 export function gaussian(rng: Rng): number {
+  // avoid log(0) — mulberry32 can emit exactly 0
   const u = Math.max(rng(), 1e-12);
   const v = rng();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
