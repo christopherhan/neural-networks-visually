@@ -72,7 +72,7 @@ public/models/             # exported weight files (~1-2 MB total budget)
 
 - **Figures are lazy Svelte islands** (`client:visible`): chapter pages load as pure static HTML/CSS; each figure hydrates only when scrolled near.
 - **Micro-ML engine, hand-rolled:** scalar autograd (micrograd-style) powers all live-training figures. Chosen over TensorFlow.js deliberately — small bundles, fully inspectable, and the engine's source *is* teaching material.
-- **Tiny transformer, trained offline:** a small model (character/BPE-lite tokenizer, ~2 layers, few heads) trained by the Python tool; weights shipped as static JSON; inference re-implemented in TS. All Part III demos (attention, embeddings, generation) share this one model.
+- **Tiny transformer, trained offline:** a small model (~2 layers, few heads) with a small BPE tokenizer (~1–2k merges, trained on the same corpus — chosen over character-level so the Chapter 9 tokenization demo shows real subword merges) trained by the Python tool; weights shipped as static JSON; inference re-implemented in TS. All Part III demos (attention, embeddings, generation) share this one model.
 - **ScrollStage:** small IntersectionObserver-based helper for scrollytelling; no third-party scrollytelling dependency.
 - **Rendering:** SVG for diagrams/small figures; Canvas for dense ones (decision boundaries, feature maps).
 
