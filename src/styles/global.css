@@ -90,16 +90,16 @@ pre {
   }
 }
 
-/* Prose rhythm for chapter content */
-p, ul, ol, blockquote {
+/* Prose rhythm for chapter content (scoped: MDX output has no Astro scope attr) */
+.chapter :where(p, ul, ol, blockquote) {
   margin: 0 0 1.1rem;
 }
 
-ul, ol {
+.chapter :where(ul, ol) {
   padding-left: 1.4rem;
 }
 
-blockquote {
+.chapter :where(blockquote) {
   margin-left: 0;
   padding-left: 1.25rem;
   border-left: 3px solid var(--line);
@@ -107,18 +107,18 @@ blockquote {
   font-style: italic;
 }
 
-hr {
+.chapter :where(hr) {
   border: none;
   border-top: 2px dashed var(--line);
   margin: 2.5rem auto;
   width: 60%;
 }
 
-figure {
+.chapter :where(figure) {
   margin: 2rem 0;
 }
 
-figcaption {
+.chapter :where(figcaption) {
   font-family: var(--font-ui);
   font-size: 0.85rem;
   color: var(--muted);

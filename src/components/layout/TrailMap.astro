@@ -1,0 +1,123 @@
+---
+import { CURRICULUM, PARTS } from '../../lib/site/curriculum';
+import { url } from '../../lib/site/url';
+
+interface Props {
+  /** slugs of chapters that have written content */
+  writtenSlugs: string[];
+}
+const { writtenSlugs } = Astro.props;
+
+// Hand-placed stops: a meandering trail, bottom-left to top-right.
+// One entry per chapter, index = chapter number - 1.
+const STOPS: Array<{ x: number; y: number }> = [
+  { x: 70, y: 520 },  { x: 150, y: 480 }, { x: 230, y: 500 }, { x: 310, y: 450 },
+  { x: 380, y: 480 }, { x: 450, y: 430 }, { x: 520, y: 460 }, { x: 590, y: 410 },
+  { x: 640, y: 340 }, { x: 570, y: 290 }, { x: 490, y: 310 }, { x: 410, y: 270 },
+  { x: 330, y: 290 }, { x: 250, y: 250 }, { x: 320, y: 180 }, { x: 400, y: 150 },
+  { x: 480, y: 170 }, { x: 560, y: 100 },
+];
+
+const PART_COLORS: Record<number, string> = {
+  1: 'var(--accent-blue)',
+  2: 'var(--accent-green)',
+  3: 'var(--accent-gold)',
+  4: 'var(--accent-red)',
+};
+
+const pathD = STOPS.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+const stops = CURRICULUM.map((chapter) => ({
+  chapter,
+  pos: STOPS[chapter.number - 1],
+  color: PART_COLORS[chapter.part],
+  written: writtenSlugs.includes(chapter.slug),
+}));
+---
+
+<figure class="trail sketch">
+  <svg viewBox="0 0 720 560" role="img" aria-label="Course trail map: 18 chapters from the neuron to frontier models">
+    <path d={pathD} fill="none" stroke="var(--line)" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round"></path>
+    {
+      stops.map(({ chapter, pos, color, written }) =>
+        written ? (
+          <a href={url(`chapters/${chapter.slug}/`)}>
+            <circle cx={pos.x} cy={pos.y} r="14" fill={color} />
+            <text x={pos.x} y={pos.y + 4} text-anchor="middle" class="stop-num">{chapter.number}</text>
+            <text x={pos.x} y={pos.y + 32} text-anchor="middle" class="stop-title">{chapter.title}</text>
+          </a>
+        ) : (
+          <g class="soon">
+            <circle cx={pos.x} cy={pos.y} r="14" fill="none" stroke={color} stroke-width="2.5" stroke-dasharray="4 3" />
+            <text x={pos.x} y={pos.y + 4} text-anchor="middle" class="stop-num soon-num">{chapter.number}</text>
+            <text x={pos.x} y={pos.y + 32} text-anchor="middle" class="stop-title">{chapter.title}</text>
+          </g>
+        )
+      )
+    }
+  </svg>
+  <figcaption>
+    {
+      PARTS.map((part) => (
+        <span class="legend-item">
+          <span class="legend-dot" style={`background: ${PART_COLORS[part.number]}`} />
+          Part {part.numeral}: {part.title}
+        </span>
+      ))
+    }
+  </figcaption>
+</figure>
+
+<style>
+  .trail {
+    padding: 1.5rem;
+    margin: 0;
+  }
+  svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .stop-num {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 700;
+    fill: #fffdf5;
+  }
+  .soon-num {
+    fill: var(--faint);
+  }
+  .stop-title {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .soon .stop-title {
+    fill: var(--faint);
+  }
+  a:hover circle {
+    stroke: var(--ink-strong);
+    stroke-width: 3;
+  }
+  figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    justify-content: center;
+    margin-top: 1rem;
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+</style>

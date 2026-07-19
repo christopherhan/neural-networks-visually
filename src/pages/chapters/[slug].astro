@@ -24,6 +24,11 @@ if (meta.number !== entry.data.number) {
     `Chapter "${entry.id}": frontmatter number ${entry.data.number} != curriculum number ${meta.number}`
   );
 }
+if (meta.title !== entry.data.title) {
+  throw new Error(
+    `Chapter "${entry.id}": frontmatter title "${entry.data.title}" != curriculum title "${meta.title}"`
+  );
+}
 ---
 
 <ChapterShell chapter={meta} summary={entry.data.summary} writtenSlugs={writtenSlugs}>
