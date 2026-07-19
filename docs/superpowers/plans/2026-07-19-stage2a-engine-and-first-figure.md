@@ -920,7 +920,7 @@ Behavior contract: two datasets (clouds = separable, xor = impossible); three sl
   let mode: 'clouds' | 'xor' = $state('clouds');
 
   const clouds = twoClouds(15, 1);
-  const xor = xorQuadrants(40, 2);
+  const xor = xorQuadrants(40); // default seed — pinned balanced by datasets tests
   const points = $derived(mode === 'clouds' ? clouds : xor);
 
   const sx = linearScale([-1.2, 1.2], [12, 328]);
