@@ -1,0 +1,101 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import 'katex/dist/katex.min.css';
+import { CURRICULUM, partOf, prevNext } from '../../lib/site/curriculum';
+import type { ChapterMeta } from '../../lib/site/curriculum';
+import { url } from '../../lib/site/url';
+
+interface Props {
+  chapter: ChapterMeta;
+  summary: string;
+  /** slugs of chapters that have written content (for prev/next linking) */
+  writtenSlugs: string[];
+}
+
+const { chapter, summary, writtenSlugs } = Astro.props;
+const part = partOf(chapter);
+const { prev, next } = prevNext(chapter.number);
+const progress = (chapter.number / CURRICULUM.length) * 100;
+const isWritten = (slug: string | undefined) =>
+  slug !== undefined && writtenSlugs.includes(slug);
+---
+
+<BaseLayout title={`${chapter.title} · Neural Networks, Visually`} description={summary}>
+  <div class="progress" aria-hidden="true">
+    <div class="progress-fill" style={`width: ${progress}%`}></div>
+  </div>
+
+  <article class="chapter">
+    <header>
+      <p class="label">
+        Part {part.numeral} · Chapter {chapter.number} of {CURRICULUM.length}
+      </p>
+      <h1>{chapter.title}</h1>
+      <p class="summary">{summary}</p>
+    </header>
+
+    <slot />
+
+    <nav class="chapter-nav" aria-label="Chapter navigation">
+      {
+        prev && isWritten(prev.slug) ? (
+          <a href={url(`chapters/${prev.slug}/`)}>← {prev.title}</a>
+        ) : (
+          <span />
+        )
+      }
+      <a href={url('')}>Trail map</a>
+      {
+        next && isWritten(next.slug) ? (
+          <a href={url(`chapters/${next.slug}/`)}>{next.title} →</a>
+        ) : (
+          <span class="soon">Next: coming soon</span>
+        )
+      }
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .progress {
+    position: sticky;
+    top: 0;
+    height: 4px;
+    background: var(--line-soft);
+    z-index: 10;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent-gold);
+  }
+  .chapter {
+    max-width: var(--measure);
+    margin: 0 auto;
+    padding: 3rem 1.25rem 5rem;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  h1 {
+    font-size: 2.4rem;
+    margin: 0.4rem 0;
+  }
+  .summary {
+    color: var(--muted);
+    font-style: italic;
+  }
+  .chapter-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 2px dashed var(--line);
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+  }
+  .soon {
+    color: var(--faint);
+  }
+</style>

@@ -1,0 +1,31 @@
+---
+import { getCollection, render } from 'astro:content';
+import ChapterShell from '../../components/layout/ChapterShell.astro';
+import { chapterBySlug } from '../../lib/site/curriculum';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('chapters');
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry, writtenSlugs: entries.map((e) => e.id) },
+  }));
+}
+
+const { entry, writtenSlugs } = Astro.props;
+const { Content } = await render(entry);
+const meta = chapterBySlug(entry.id);
+if (!meta) {
+  throw new Error(
+    `Chapter file "${entry.id}" has no matching slug in src/lib/site/curriculum.ts`
+  );
+}
+if (meta.number !== entry.data.number) {
+  throw new Error(
+    `Chapter "${entry.id}": frontmatter number ${entry.data.number} != curriculum number ${meta.number}`
+  );
+}
+---
+
+<ChapterShell chapter={meta} summary={entry.data.summary} writtenSlugs={writtenSlugs}>
+  <Content />
+</ChapterShell>

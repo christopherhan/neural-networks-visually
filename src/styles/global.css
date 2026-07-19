@@ -89,3 +89,39 @@ pre {
     scroll-behavior: auto !important;
   }
 }
+
+/* Prose rhythm for chapter content */
+p, ul, ol, blockquote {
+  margin: 0 0 1.1rem;
+}
+
+ul, ol {
+  padding-left: 1.4rem;
+}
+
+blockquote {
+  margin-left: 0;
+  padding-left: 1.25rem;
+  border-left: 3px solid var(--line);
+  color: var(--muted);
+  font-style: italic;
+}
+
+hr {
+  border: none;
+  border-top: 2px dashed var(--line);
+  margin: 2.5rem auto;
+  width: 60%;
+}
+
+figure {
+  margin: 2rem 0;
+}
+
+figcaption {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 0.5rem;
+}

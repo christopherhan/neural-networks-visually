@@ -1,0 +1,39 @@
+---
+number: 1
+title: The Neuron
+summary: From if statements to weighted sums — the smallest unit of learning.
+---
+
+import MathAside from '../../components/layout/MathAside.astro';
+import EngineerFooter from '../../components/layout/EngineerFooter.astro';
+
+You already write neurons. Every time you code a threshold —
+
+```ts
+if (0.6 * temperature + 0.4 * humidity > 75) turnOnFan();
+```
+
+— you've built one: a weighted sum of inputs compared against a threshold.
+That is the perceptron, the 1958 original, and it is the atom this entire
+site builds from. The only thing it can't do yet is *choose its own weights*.
+
+<MathAside>
+
+A neuron computes $y = \sigma(w \cdot x + b)$, where $w$ are the weights,
+$b$ is the bias, and $\sigma$ is an activation function. The perceptron's
+$\sigma$ is a hard step: output $1$ if the sum is positive, else $0$.
+
+</MathAside>
+
+*(Interactive figure coming in Stage 2: adjust the weights yourself and try
+to separate two clouds of points — then meet the XOR arrangement no single
+line can split.)*
+
+<EngineerFooter>
+
+A neuron is `dot(w, x) + b` piped through a nonlinearity — a fused
+multiply-accumulate with a squashing function. A layer is a matrix-vector
+product. That's the whole trick; the rest of this site is about choosing
+`w` automatically and wiring billions of these together.
+
+</EngineerFooter>

@@ -1,0 +1,25 @@
+---
+interface Props {
+  title?: string;
+}
+const { title = 'Show the math' } = Astro.props;
+---
+
+<details class="math-aside sketch">
+  <summary class="label">{title}</summary>
+  <div class="math-aside-body"><slot /></div>
+</details>
+
+<style>
+  .math-aside {
+    margin: 1.5rem 0;
+    padding: 0.75rem 1.25rem;
+  }
+  summary {
+    cursor: pointer;
+    color: var(--link);
+  }
+  .math-aside-body {
+    padding-top: 0.5rem;
+  }
+</style>
