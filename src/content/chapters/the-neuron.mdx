@@ -6,6 +6,7 @@ summary: From if statements to weighted sums — the smallest unit of learning.
 
 import MathAside from '../../components/layout/MathAside.astro';
 import EngineerFooter from '../../components/layout/EngineerFooter.astro';
+import PerceptronPlayground from '../../components/figures/perceptron/PerceptronPlayground.svelte';
 
 You already write neurons. Every time you code a threshold —
 
@@ -15,25 +16,65 @@ if (0.6 * temperature + 0.4 * humidity > 75) turnOnFan();
 
 — you've built one: a weighted sum of inputs compared against a threshold.
 That is the perceptron, the 1958 original, and it is the atom this entire
-site builds from. The only thing it can't do yet is *choose its own weights*.
+site builds from.
+
+Look at the shape of that `if` statement. Each input gets a **weight** — a
+number saying how much it matters. Temperature matters more than humidity
+here (0.6 vs 0.4), so it pulls harder on the decision. Sum up the pulls,
+compare against a threshold, act. That's the whole machine.
+
+Rearrange it slightly and the threshold becomes a **bias** term `b` on the
+left-hand side, and the comparison is always against zero:
+
+```ts
+if (w1 * x1 + w2 * x2 + b > 0) fire();
+```
+
+Why rearrange? Because now the decision has a *geometry*. The equation
+`w1·x1 + w2·x2 + b = 0` is a line. Everything on one side fires, everything
+on the other side doesn't. Choosing weights **is** choosing where that line
+sits — and you can try it yourself:
+
+<PerceptronPlayground client:visible />
+
+With the two clouds, a few slider nudges find a line that separates them
+perfectly. Congratulations — you just did, by hand, what "learning" will
+soon do automatically: adjust weights until the decisions come out right.
+
+Now click **Try XOR**.
+
+The pattern is simple — same-sign coordinates are one class, opposite-sign
+the other — but no line you can draw gets them all. You can prove it to
+yourself in about thirty seconds of frustrated slider-dragging. This is the
+**XOR wall**, and it is not a toy problem: in 1969 Minsky and Papert used
+exactly this limitation to argue perceptrons were a dead end, and neural
+network research froze for a decade.
+
+The escape route has two parts, and they are the next two ideas in this
+course: activation functions that *bend* (so decisions aren't stuck being
+straight lines), and layers that *stack* (so simple decisions compose into
+complicated ones). A single neuron can only draw a line. A network of them
+can draw anything.
 
 <MathAside>
 
-A neuron computes $y = \sigma(w \cdot x + b)$, where $w$ are the weights,
-$b$ is the bias, and $\sigma$ is an activation function. The perceptron's
-$\sigma$ is a hard step: output $1$ if the sum is positive, else $0$.
+A neuron computes $y = \sigma(w \cdot x + b)$, where $w$ is the weight
+vector, $b$ is the bias, and $\sigma$ is an activation function. The
+perceptron's $\sigma$ is a hard step: output $1$ if $w \cdot x + b > 0$,
+else $-1$. The decision boundary $w \cdot x + b = 0$ is a hyperplane —
+a line in 2D, a plane in 3D — and $w$ is its normal vector: it points
+perpendicular to the boundary, toward the positive class.
 
 </MathAside>
-
-*(Interactive figure coming in Stage 2: adjust the weights yourself and try
-to separate two clouds of points — then meet the XOR arrangement no single
-line can split.)*
 
 <EngineerFooter>
 
 A neuron is `dot(w, x) + b` piped through a nonlinearity — a fused
 multiply-accumulate with a squashing function. A layer is a matrix-vector
-product. That's the whole trick; the rest of this site is about choosing
-`w` automatically and wiring billions of these together.
+product; a network is a pipeline of them. That's the whole trick. The rest
+of this site is about choosing `w` automatically (chapters 3–5) and wiring
+billions of these together (chapters 6 onward). The figure above is powered
+by the same ~150-line autograd engine you'll meet in chapter 4 — view
+source, it's all there.
 
 </EngineerFooter>
