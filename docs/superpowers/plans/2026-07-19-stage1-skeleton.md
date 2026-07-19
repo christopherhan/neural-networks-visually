@@ -1180,3 +1180,17 @@ Expected: `CI & Deploy` succeeds; site live at `https://<owner>.github.io/neural
 - Svelte figure components, ScrollStage, the micro-ML engine (`lib/nn`) — Stage 2.
 - Chapters 2–18 content.
 - Figure fallback-snapshot mechanism (arrives with the first real figure in Stage 2).
+
+## Addendum: review-driven deviations (recorded post-execution)
+
+Code review during execution amended the plan as follows — later stages should treat these as canonical:
+
+1. **Base-path premise was wrong (Critical).** `withastro/action@v3` does NOT inject `site`/`base` (verified against its action.yml). Fix: `astro.config.mjs` reads `site: process.env.SITE_URL` / `base: process.env.BASE_PATH`; the workflow's build job passes `SITE_URL=https://${{ github.repository_owner }}.github.io` and `BASE_PATH=/${{ github.event.repository.name }}` as step env on `withastro/action@v3`. Local/test builds keep base `/`.
+2. **Linkinator skip pattern**: `--skip "^https?://(?!localhost)"` (a bare `^https?://` skips everything in directory mode — silently disables the gate).
+3. **WCAG text tokens**: added `--accent-gold-ink: #8a6800` (used by `.label`) and `--link: #1a6fa8` (used by `a`); `--accent-gold`/`--accent-blue` remain decorative-only. `scroll-behavior: auto !important` added to the reduced-motion block.
+4. **KaTeX CSS** imports in `ChapterShell.astro`, not `BaseLayout.astro` (non-chapter pages don't pay for it).
+5. **Prose rhythm CSS** is scoped `.chapter :where(p, ul, ol, blockquote, hr, figure, figcaption)` — never bare element selectors (MDX output has no Astro scope attr; bare selectors leak into UI chrome).
+6. **`[slug].astro` validates frontmatter `title`** against the curriculum in addition to `number` (build fails on drift).
+7. **TrailMap accessibility/mobile**: no `role="img"` on the interactive SVG — `<nav aria-label>` wrapper, `<title>`+`aria-labelledby`, per-link `aria-label`s, transparent r=24 hit targets, `a:focus-visible .stop-dot` ring, `STOPS.length === CURRICULUM.length` build guard, and a `<ol class="trail-list">` fallback swapped in under 640px (SVG hidden — exactly one nav exposed per breakpoint).
+8. **`package.json`** gained `"engines": { "node": ">=20.3.0" }`.
+9. Consciously accepted (documented, not bugs): white numerals on green/gold trail stops are below AA (decorative; titles carry meaning), `--faint` "coming soon" text is low-contrast, curriculum `numeral` field is redundant with `number`.
