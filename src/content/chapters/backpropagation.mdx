@@ -53,6 +53,7 @@ mul(other) {
 
 backward() {
   // topologically sort the graph, then apply the chain rule in reverse
+  // (the real file inlines the ten-line sort right here)
   this.grad = 1;
   for (const node of reverseTopoOrder(this)) node._backward();
 }
