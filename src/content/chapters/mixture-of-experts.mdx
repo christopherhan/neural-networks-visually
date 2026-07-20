@@ -10,39 +10,39 @@ import MoERouter from '../../components/figures/moe/MoERouter.svelte';
 
 Chapter 11 closed on a ratio worth banking: at typical widths, a
 transformer block's parameters split roughly two-to-one in the MLP's
-favor — about two-thirds of the weights in every block sit in that one
-per-token network, only a third in attention. And every token that
-passes through the block pays the *entire* cost of that MLP, every
-single layer, every single time — the plain word "the" gets multiplied
-through the exact same 32,768-weight network as a token doing genuinely
-hard semantic work. One-size-fits-all, whether the size fits or not.
+favor. About two-thirds of the weights in every block sit in that one
+per-token network, only a third in attention, and every token that
+passes through pays the *entire* cost of that MLP, every single layer,
+every single time. The plain word "the" gets multiplied through the
+exact same 32,768-weight network as a token doing genuinely hard
+semantic work. One-size-fits-all, whether the size fits or not.
 
-Here's the lever that falls out of that fact: what if each token only
-activated the MLP capacity it actually needs? **Mixture-of-experts**
-takes that question literally. Instead of one MLP per block, keep many —
-call them **experts**, each the same shape as the MLP it replaces — and
-add a small **router**: a tiny linear layer that looks at a token's
-vector and scores every expert for "how much should you handle this
-one." Send the token to only its top few scorers, weight each one's
-output by how confident the router was, and add the results together:
-most experts never touch that token at all. Total *parameters* grow with
-however many experts you add — that's just more weights sitting in
-memory. Total *compute per token* grows only with how many experts
-actually fire. Decoupling those two numbers, so a model's knowledge
-capacity can scale far faster than its per-token compute bill, is the
-entire idea. Everything else in this chapter is that idea's fine print.
+What if each token only activated the MLP capacity it actually needs?
+**Mixture-of-experts** takes that question literally. Instead of one MLP
+per block, keep many (call them **experts**, each the same shape as the
+MLP it replaces) and add a small **router**, a tiny linear layer that
+looks at a token's vector and scores every expert for "how much should
+you handle this one." Send the token to only its top few scorers, weight
+each one's output by how confident the router was, and add the results
+together, so most experts never touch that token at all. Total
+*parameters* grow with however many experts you add: that's just more
+weights sitting in memory. Total *compute per token* grows only with how
+many experts actually fire. Decoupling those two numbers, so a model's
+knowledge capacity can scale far faster than its per-token compute bill,
+is the entire idea. Everything else in this chapter is that idea's fine
+print.
 
 <MoERouter client:visible />
 
-The router above is deliberately, honestly untrained — a fixed random
-projection, not the product of a training run — so what you're watching
+The router above is deliberately, honestly untrained: a fixed random
+projection, not the product of a training run, so what you're watching
 is the *mechanism*, not a demonstration of routing wisdom. Click through
-a few tokens and one thing is worth noticing anyway: on the default
-sentence, «Queen», «Alice», and «said» — the two proper nouns and the
-verb tying them together — all land on the *identical* top-2 pair of
-experts, «The» shares only one of those two, and an unrelated fragment
+a few tokens and one thing is worth noticing anyway. On the default
+sentence, «Queen», «Alice», and «said» (the two proper nouns and the
+verb tying them together) all land on the *identical* top-2 pair of
+experts; «The» shares only one of those two, and an unrelated fragment
 like «un» shares neither. The gate matrix never learned anything, but
-the embeddings it's scoring did; real structure surviving from chapter
+the embeddings it's scoring did. Real structure surviving from chapter
 9's trained embedding space still bends an untrained router's picks, just
 not into anything resembling what a *trained* router would learn to do
 with them. Every token lands on some pair of experts with a gate
@@ -50,42 +50,42 @@ percentage attached, and the aggregate load bars underneath make the
 imbalance a random router produces obvious at a glance: with nothing
 pushing back, a handful of experts end up popular and the rest sit
 nearly idle. Toggle the FLOPs readout and the payoff shows up as exact
-numbers on this toy's own scale — 8 experts built at chapter 11's MLP
+numbers on this toy's own scale: 8 experts built at chapter 11's MLP
 shape cost 262,144 multiplies per token if every one of them fired, but
-only 2 of them actually do, so the real bill is 65,536: a clean 4× cut,
+only 2 of them actually do, so the real bill is 65,536, a clean 4× cut,
 paid against the identical 262,144-multiply pool of parameters that
 never shrank at all.
 
 That imbalance you just watched happen for free is the first entry in
-MoE's engineering tax. Left alone, a router converges on favorites —
-a few experts get all the practice and all the gradient signal, the rest
-undertrain and become dead weight, which is worse for capacity than not
-having them. Production systems fight this with an auxiliary loss that
-penalizes lopsided routing, or, in DeepSeek-V3's case, a bias term added
-directly to the routing scores and nudged up or down after each batch —
-no extra loss term to balance against the main objective, just pure
-pressure toward even load. Balance is the *first* tax. The second is
-structural: parameters may be sparse per token, but every expert still
-has to live somewhere in GPU memory, all the time, whether or not it's
-firing this step. Large MoE models shard experts across GPUs and route
-each token's chosen experts across that mesh with an all-to-all
-communication step, every single MoE layer, every forward pass — real
-network traffic standing in for what would, in a dense model, just be a
-local matrix multiply.
+MoE's engineering tax. Left alone, a router converges on favorites: a
+few experts get all the practice and all the gradient signal, and the
+rest undertrain and become dead weight, which is worse for capacity than
+not having them. Production systems fight this with an auxiliary loss
+that penalizes lopsided routing, or, in DeepSeek-V3's case, a bias term
+added directly to the routing scores and nudged up or down after each
+batch, no extra loss term to balance against the main objective, just
+pure pressure toward even load. Balance is the *first* tax. The second
+is structural: parameters may be sparse per token, but every expert
+still has to live somewhere in GPU memory, all the time, whether or not
+it's firing this step. Large MoE models shard experts across GPUs and
+route each token's chosen experts across that mesh with an all-to-all
+communication step, every single MoE layer, every forward pass. That's
+real network traffic standing in for what would, in a dense model, just
+be a local matrix multiply.
 
 The payoff is real enough that every frontier lab eats that tax anyway.
 Mixtral 8×7B, Mistral's openly published model, popularized the recipe
 at accessible scale: 8 experts per MLP layer, top-2 routing, 46.7B total
-parameters but only about 12.9B active on any given token — under a
-third of the weight count doing the work, by design. DeepSeek-V3 pushed
-the same idea to frontier scale and published the exact shape: 256
-routed experts plus 1 always-on shared expert per layer, top-8 routing,
-671B total parameters, 37B active per token. Kimi K2, from Moonshot AI,
-lands in the same published-family neighborhood — roughly 1 trillion
-total parameters, about 32 billion active per token. Three real models,
-three public parameter counts, one shared trick: park enormous knowledge
-capacity in weights that mostly sit still, and only wake the fraction of
-it that a given token actually needs.
+parameters but only about 12.9B active on any given token, under a third
+of the weight count doing the work, by design. DeepSeek-V3 pushed the
+same idea to frontier scale and published the exact shape: 256 routed
+experts plus 1 always-on shared expert per layer, top-8 routing, 671B
+total parameters, 37B active per token. Kimi K2, from Moonshot AI, lands
+in the same published-family neighborhood, roughly 1 trillion total
+parameters, about 32 billion active per token. All three models make the
+same trade for the same reason: park enormous knowledge capacity in
+weights that mostly sit still, and only wake the fraction of it that a
+given token actually needs.
 
 <MathAside>
 
@@ -102,8 +102,9 @@ parameters any single token's forward pass touches. This toy uses $k=2$,
 $n=8$: a ratio of $1/4$, matching the figure's measured 4× compute cut
 directly, since compute scales with $k$ while the parameter pool scales
 with $n$. DeepSeek-V3's published $37\text{B} / 671\text{B} \approx
-5.5\%$ is the same ratio at frontier scale — smaller, because frontier
-routers pick fewer of many more experts, not because the idea changes.
+5.5\%$ is the same ratio at frontier scale. It's smaller because
+frontier routers pick fewer of many more experts, not because the idea
+changes.
 
 </MathAside>
 
@@ -112,22 +113,22 @@ routers pick fewer of many more experts, not because the idea changes.
 Mixture-of-experts is sharding you can't opt out of. The moment a model
 has more expert weights than fit comfortably on one accelerator, expert
 placement across a cluster stops being a deployment detail and becomes
-part of the architecture: which experts live on which GPU, how tokens
-get routed across that mesh, and how much all-to-all bandwidth a training
-step burns before it burns a single useful FLOP. Router collapse — the
-imbalance this chapter's figure showed you happening for free with zero
-training pressure against it — is the ops pain that keeps that sharding
-honest; a lab that ships an MoE model ships a load-balancing story right
-alongside it, whether that's an auxiliary loss or DeepSeek's bias-based
+part of the architecture: which experts live where, and how much
+all-to-all bandwidth a training step burns moving tokens across the mesh
+before it computes a single useful FLOP. Router collapse, the imbalance
+this chapter's figure showed you happening for free with zero training
+pressure against it, is the ops pain that keeps that sharding honest. A
+lab that ships an MoE model ships a load-balancing story right alongside
+it, whether that's an auxiliary loss or DeepSeek's bias-based
 alternative.
 
 And keep this chapter's ratio in your pocket for reading spec sheets.
 "1 trillion parameters" is a real number and a genuine headline, but it
 answers a different question than "how much compute does one forward
-pass cost." The honest second number — DeepSeek-V3's 37B active,
-Kimi K2's roughly 32B, Mixtral's 12.9B — is the one that predicts
-latency, serving cost, and GPU footprint. Total parameters tell you how
-much the model knows. Active parameters tell you what it costs to ask it
+pass cost." The honest second number (DeepSeek-V3's 37B active, Kimi
+K2's roughly 32B, Mixtral's 12.9B) is the one that predicts latency and
+serving cost, plus GPU footprint. Total parameters tell you how much the
+model knows. Active parameters tell you what it costs to ask it
 something. Read both, every time either one gets quoted alone.
 
 </EngineerFooter>

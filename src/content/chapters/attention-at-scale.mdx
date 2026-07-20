@@ -10,39 +10,39 @@ import KVCalculator from '../../components/figures/scale/KVCalculator.svelte';
 
 Chapter 13's generation loop was honest about its cost: every token
 sampled means one full forward pass, restarted from scratch, through the
-entire stack. Its footer flagged the obvious waste inside that restart —
+entire stack. Its footer flagged the obvious waste inside that restart:
 recomputing every earlier token's key and value vectors, over and over,
-when nothing about them had changed — and promised the fix would get its
+when nothing about them had changed, and promised the fix would get its
 own chapter. This is that chapter. The fix is called the **KV cache**,
-and it's less a clever trick than an accounting decision: since a
+and it's less a clever trick than an accounting decision. Since a
 token's key and value are pure functions of that token and everything
 before it, compute them once, store them, and never touch that
 computation again.
 
 <KVCalculator client:visible />
 
-Step through the figure above and the shape of the win is concrete: with
+Step through the figure above and the shape of the win is concrete. With
 no cache, generating a sequence's sixth token means recomputing all six
 tokens' keys and values, and the fifth token's step recomputed five, and
-so on — the running total is 1+2+3+4+5+6, a triangular number, growing
+so on: the running total is 1+2+3+4+5+6, a triangular number, growing
 quadratically with sequence length. With a cache, every single step does
 exactly one unit of fresh work and reuses the rest. O(T²) becomes O(T).
 That's not a marginal optimization; for long sequences it's the
 difference between a model that serves acceptably and one that doesn't
 serve at all. But read the figure's third step as the honest asterisk:
-the compute you saved didn't vanish, it *moved* — into memory. A cache
+the compute you saved didn't vanish, it *moved*, into memory. A cache
 that never shrinks and only grows is now resident on the GPU for as long
 as the conversation runs.
 
 That memory bill is exactly what the calculator half of the figure
 prices out, and the three presets are three real answers to the same
-question — how much can you shrink it without giving up quality?
+question: how much can you shrink it without giving up quality?
 **MHA** (multi-head attention) is the no-sharing baseline: every query
 head keeps its own dedicated key and value head, so the cache scales
 with the *full* head count, and at real context lengths the number
 explodes past anything reasonable. **GQA** (grouped-query attention),
 the choice behind the Llama-70B family, has many query heads share one
-key/value head — Llama-70B-scale models publish 8 KV heads, a flat 16×
+key/value head. Llama-70B-scale models publish 8 KV heads, a flat 16×
 reduction against MHA's 128 for a small, well-measured quality cost.
 **MLA** (multi-head latent attention) goes further and changes the
 approach entirely: instead of shrinking the *number* of key/value heads,
@@ -51,17 +51,17 @@ one shared low-rank latent vector per layer, small enough to store
 cheaply, and reconstructs the full-size keys and values from it on
 demand at attention time. Published DeepSeek/K2-family figures put the
 result at roughly another 12× smaller than GQA's already-reduced
-footprint — real numbers from a real published architecture, not a
+footprint: real numbers from a real published architecture, not a
 theoretical ceiling.
 
 Drag the context slider toward 128k and beyond and watch what "explodes"
 actually means: MHA's bar runs off scale while GQA and MLA stay
-survivable, because both attack the same term in the formula — the
-per-token, per-layer footprint — from different angles, sharing versus
+survivable, because both attack the same term in the formula (the
+per-token, per-layer footprint) from different angles, sharing versus
 compressing. Worth noticing what neither one touches: attention's *compute*
 cost is still the quadratic $T^2$ chapter 10 introduced, comparing every
 query against every key. The KV cache is a memory fix layered on top of
-that unchanged compute cost, not a replacement for it — two separate
+that unchanged compute cost, not a replacement for it. Two separate
 bills, attacked by mostly separate engineering.
 
 Long context has a second ceiling worth naming honestly, back at
@@ -69,11 +69,11 @@ position encoding rather than memory. Chapter 12's rotary position
 embeddings were fit to whatever range of positions the model actually
 trained on; push past that range and the rotations start extrapolating
 into territory the model never learned to read. Labs stretch that
-ceiling after training — adjusting RoPE's base frequency, or fine-tuning
+ceiling after training, adjusting RoPE's base frequency, or fine-tuning
 briefly at the new target length, rather than retraining a frontier
 model from scratch just to widen its window. And sparse or windowed
 attention variants, which skip most of that $T^2$ comparison instead of
-computing it in full, absolutely exist and get published regularly — but
+computing it in full, absolutely exist and get published regularly. But
 as of this writing, dense, full attention still wins at the frontier
 more often than not. Simplicity and a well-understood cost model have
 kept beating cleverer approximations, so far.
@@ -91,7 +91,7 @@ down to a small shared group count, everything else in the formula
 untouched. MLA changes a different factor: it replaces the whole product
 $H_{kv} \cdot d_{head}$ with a single compressed latent dimension, small
 by design, reconstructed back up to full size only at the moment
-attention actually needs it — the compression lives in what gets stored,
+attention actually needs it. The compression lives in what gets stored,
 not in what gets computed against.
 
 </MathAside>
@@ -102,22 +102,22 @@ Serving a large language model is, underneath the model-shaped surface,
 a memory-bandwidth business. Every generated token needs its cache read
 off the GPU before the next matrix multiply can even start, and that
 read scales with three numbers multiplied together: batch size, context
-length, and per-token KV bytes. Batch size is easy to forget here — it's
+length, and per-token KV bytes. Batch size is easy to forget here: it's
 not a slider in this chapter's figure, but every concurrent conversation
 a server is handling multiplies the same cache cost again, which is
 exactly why production inference stacks obsess over KV-cache-efficient
-attention variants; it's the line item that decides how many users one
+attention variants. It's the line item that decides how many users one
 GPU can actually hold in memory at once.
 
 That's also the honest answer to why "1 million token context window"
-reads as a headline. It is not evidence of a smarter model — the
+reads as a headline. It is not evidence of a smarter model: the
 attention mechanism inside a 1M-context model is the identical
 $\text{softmax}(QK^\top/\sqrt{d_k})V$ from chapter 10. It's evidence of
-a systems team that solved a memory-bandwidth and engineering problem:
-compressed caches, smarter serving, enough GPU memory bandwidth to keep
-that much state alive per user. Read a context-length headline as a
-statement about infrastructure investment, not architectural insight —
-this chapter's calculator is exactly the arithmetic that headline is
-quietly asking you to trust.
+a systems team that solved a memory-bandwidth and engineering problem,
+compressing caches and building smarter serving with enough GPU memory
+bandwidth to keep that much state alive per user. Read a context-length
+headline as a statement about infrastructure investment, not
+architectural insight. This chapter's calculator is exactly the
+arithmetic that headline is quietly asking you to trust.
 
 </EngineerFooter>
