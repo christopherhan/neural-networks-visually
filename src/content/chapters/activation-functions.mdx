@@ -10,61 +10,66 @@ import ActivationExplorer from '../../components/figures/activation/ActivationEx
 
 Chapter 1 left us stuck at a wall: a neuron's decision is a straight line,
 and XOR laughs at straight lines. Your first instinct might be to throw more
-neurons at the problem — feed the outputs of two neurons into a third. Layers!
+neurons at the problem: feed the outputs of two neurons into a third layer.
 Surely stacking decisions makes them smarter.
 
-Here's the uncomfortable truth: **stacking linear things gives you another
-linear thing.** A weighted sum of weighted sums is... a weighted sum. You can
-pile up a hundred layers of pure `w·x + b` and the whole tower collapses,
-mathematically, into one straight line. Same wall, more paperwork.
+It doesn't work. Stacking linear things gives you another linear thing: a
+weighted sum of weighted sums is still a weighted sum. Pile up a hundred
+layers of pure `w·x + b` and the whole tower collapses, mathematically, into
+one straight line. Same wall, more paperwork.
 
-Something in the pipeline has to *bend*. That something is the **activation
-function** — the σ wrapped around every neuron's sum. Chapter 1's neuron
-used the bluntest bend there is: a hard step from 0 to 1. Meet the rest of
-the family:
+Somewhere in that stack, one step has to not be a weighted sum. That step is
+the **activation function**, the σ wrapped around every neuron's sum.
+Chapter 1's neuron used the bluntest version there is: a hard step from 0 to
+1. Meet the rest of the family:
 
 <ActivationExplorer client:visible />
 
 Each has a personality:
 
-- **Step** — the 1958 original. Decisive, binary… and, as you may have
+- **Step** was the 1958 original: decisive, binary, and, as you may have
   discovered with the "show slope" toggle, *unteachable*. Its slope is zero
   everywhere, so it offers no hint about which direction would improve
   things. A yes/no oracle that never explains itself.
-- **Sigmoid** — a step that went to finishing school. Smoothly squashes
+- **Sigmoid** is a step that went to finishing school. It smoothly squashes
   anything into (0, 1), and its slope is alive near the middle. The classic
   choice for "probability-flavored" outputs.
-- **Tanh** — sigmoid's centered sibling, squashing into (−1, 1). Outputs
+- **Tanh** is sigmoid's centered sibling, squashing into (−1, 1). Outputs
   hover around zero, which keeps layered networks better behaved. It's what
   our engine uses by default.
-- **ReLU** — embarrassingly simple: negative in, zero out; positive in,
+- **ReLU** is embarrassingly simple: negative in, zero out; positive in,
   unchanged. The workhorse of deep learning, mostly because it's cheap and
   its slope doesn't fade at large inputs the way the squashers' do.
 
-The pattern to notice: every *useful* activation has a meaningful slope
-somewhere. That slope is the entire secret of learning. It answers the only
-question that matters: *"if I nudge the input a little, which way does the
-output move?"* A function that answers honestly can be taught. A function
-that shrugs — the step — cannot.
+Every *useful* activation has a meaningful slope somewhere, and that slope
+is what learning runs on. It answers the one question training keeps
+asking: *"if the neuron's sum shifts a little, which way does the output
+move?"* A function that answers honestly can be taught. A function that
+shrugs, like the step, cannot.
 
 <MathAside>
 
 Composition of affine maps is affine: $W_2(W_1x + b_1) + b_2 = (W_2W_1)x +
-(W_2b_1 + b_2)$ — one matrix, one bias, one line. Nonlinearity between
-layers breaks the collapse. The derivatives that matter later:
-$\sigma'(x) = \sigma(x)(1-\sigma(x))$ for sigmoid,
+(W_2b_1 + b_2)$, which collapses to one matrix and one bias, still just a
+line. Nonlinearity between layers breaks that collapse. The derivatives
+that matter later are $\sigma'(x) = \sigma(x)(1-\sigma(x))$ for sigmoid,
 $1 - \tanh^2(x)$ for tanh, and $\mathbb{1}[x > 0]$ for ReLU.
 
 </MathAside>
 
-So a bendy function lets layers genuinely add power, and a live slope tells
-us *which way to nudge*. Nudge toward what, exactly? We need a way to score
-how wrong the network is — and then a way to roll downhill on that score.
-That's the next chapter.
+The bend and the slope do two different jobs. The bend buys expressive
+power: stacked layers can now carve curved boundaries, and the XOR wall
+stops being a wall. The slope buys teachability. Learning, which the next
+two chapters build, will ask of every weight whether a small nudge up or
+down makes the answer better, and the activation's slope is a link in the
+chain that carries that answer back to the weight. A zero slope, like the
+step's, snaps the chain. Before any of that we need a way to score how
+wrong the network is, and then a way to roll downhill on that score. That's
+the next chapter.
 
 <EngineerFooter>
 
-An activation is an elementwise nonlinearity — `map(σ)` over a layer's
+An activation is an elementwise nonlinearity: `map(σ)` over a layer's
 output vector, a few nanoseconds per element. ReLU is literally
 `max(0, x)`: one compare, no transcendentals, which is half the reason it
 won. The "linear layers collapse" fact is worth internalizing: without

@@ -10,7 +10,7 @@ import GradientDescentFigure from '../../components/figures/gradient/GradientDes
 
 In chapter 1 you tuned weights by hand, eyeballing which slider made things
 better. To automate that, the machine needs what you had: a sense of
-*better*. That sense is a single number called the **loss** — a score of how
+*better*. That sense is a single number called the **loss**: a score of how
 wrong the network currently is. Zero means perfect; bigger means worse. One
 honest number that the machine can try to shrink.
 
@@ -18,23 +18,25 @@ The classic choice is squared error: for each example, take the difference
 between prediction and truth, square it (so misses in either direction count,
 and big misses count *a lot*), and add them up.
 
-Now the beautiful move. Imagine computing the loss not just for the current
-weights, but for *every possible* setting of a weight. Plot it: loss on the
-vertical, the weight on the horizontal. You get a landscape — here a simple
-valley. Somewhere at the bottom is the weight that makes the loss smallest.
-Finding it is no longer a learning problem; it's a *hiking* problem: you're
-standing on a hillside in fog, and you want the valley floor.
+Now try something more useful: imagine computing the loss not just for the
+current weights, but for *every possible* setting of a weight. Plot it, with
+loss on the vertical axis and the weight on the horizontal. You get a
+landscape, in this case a simple valley. Somewhere at the bottom is the
+weight that makes the loss smallest. Finding it is no longer a learning
+problem; it's a *hiking* problem: you're standing on a hillside in fog, and
+you want the valley floor.
 
-You can't see the bottom. But you can feel the slope under your feet — and
-walk downhill:
+You can't see the bottom, but you can feel the slope under your feet. Walk
+downhill:
 
 <GradientDescentFigure client:visible />
 
 Two things to try before reading on. First, run it with the default step
-size and watch the ball settle into the valley — that's **gradient descent**,
+size and watch the ball settle into the valley. That's **gradient descent**,
 the algorithm that trains every neural network you've ever heard of. Second,
-crank the learning rate up past ~0.45 and watch the ball overshoot the valley,
-ping-pong between the walls, and finally fly out of the plot. 💥
+crank the learning rate up past ~0.45 and watch the ball overshoot the
+valley. It ping-pongs between the walls, then flies out of the plot
+entirely. 💥
 
 That explosion is the most instructive failure in machine learning. The
 **learning rate** scales each step. Too small: you inch along, wasting time.
@@ -43,32 +45,32 @@ instead of falling. Every practitioner has watched a training run print
 `loss: NaN` because of exactly this. Now you've *seen* it happen, in one
 dimension, in slow motion.
 
-Real networks have millions of weights, so the landscape isn't a curve —
-it's a surface in millions of dimensions, full of gullies and plateaus. But
-the algorithm doesn't change: feel the slope in every direction at once,
-step downhill, repeat.
+Real networks have millions of weights, so the landscape isn't a curve. It's
+a surface in millions of dimensions, full of gullies and plateaus. But the
+algorithm doesn't change. Feel the slope in every direction at once and take
+a step downhill, then do it again.
 
-Which leaves one question — the big one. Feeling the slope means knowing, for
-*each* weight, how the loss would change if you nudged it. Millions of
+One question remains, and it's the big one. Feeling the slope means knowing,
+for *each* weight, how the loss would change if you nudged it. Millions of
 weights, one loss. How can you possibly compute all those slopes without
 re-running the network millions of times? That trick has a name:
-backpropagation. Next chapter.
+backpropagation. It's the subject of the next chapter.
 
 <MathAside>
 
 Squared-error loss over a dataset: $L(w) = \sum_i (f_w(x_i) - y_i)^2$. The
 gradient $\nabla L$ is the vector of partial derivatives $\partial L /
-\partial w_j$ — it points uphill, so learning steps go the other way:
+\partial w_j$. It points uphill, so learning steps go the other way:
 $w \leftarrow w - \eta \, \nabla L(w)$, where $\eta$ is the learning rate.
 For a quadratic valley, steps converge when $\eta < 2/L''$ and oscillate or
-diverge beyond it — the figure's blow-up is that inequality, live.
+diverge beyond it. The figure's blow-up is that inequality, live.
 
 </MathAside>
 
 <EngineerFooter>
 
 The entire optimizer is three lines: `zero the grads`, `compute grads`,
-`w -= lr * grad`. That loop — not anything exotic — is what burns the GPU
+`w -= lr * grad`. That loop (not anything exotic) is what burns the GPU
 hours. Modern optimizers (Adam, momentum) are refinements that adapt the
 step per-weight, but they're seasoning on the same dish. The `loss: NaN`
 you'll someday see in production is the figure's 💥 wearing a stack trace.
