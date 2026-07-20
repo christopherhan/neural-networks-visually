@@ -12,7 +12,7 @@ Chapter 8 diagnosed the RNN's flaw precisely: everything the network knows
 about a sequence has to survive being squeezed, step after step, through
 one fixed-size hidden state. Even with an LSTM's gates protecting the
 cell, that hidden vector is a budget, and a long sequence eventually
-overdraws it. Chapter 8 ended on a promise instead — what if a network
+overdraws it. Chapter 8 ended on a promise instead: what if a network
 could simply *look back* at any part of the sequence, directly, whenever
 it needs to, instead of carrying a compressed summary forward? Chapter 9
 supplied the missing ingredient that promise needed: every token, turned
@@ -20,10 +20,10 @@ into a vector that lives in a space where "similar" is a real, measurable
 thing. Now we can cash the promise in. This is attention, and it's the
 single mechanism that made everything since 2017 possible.
 
-Here's the move, stated plainly before the machinery: **keep every
-position's vector around — don't compress anything — and let each new
-position ask questions of all of them.** No squeezing, no forgetting by
-default, no fixed-size bottleneck. Just direct access.
+Stated as plainly as possible: **keep every position's vector around,
+don't compress anything, and let each new position ask questions of all
+of them.** No squeezing, no forgetting by default, no fixed-size
+bottleneck. Just direct access.
 
 The clearest way to build intuition for how "asking a question" becomes
 arithmetic is a library metaphor, and it stays concrete all the way down
@@ -31,34 +31,34 @@ to the matrix multiply. Every token in the sequence publishes three
 things, each one a vector derived from its embedding by a learned
 projection:
 
-- A **key** — what this token is *about*, the label on the card catalog
+- A **key**: what this token is *about*, the label on the card catalog
   drawer. ("I'm a proper noun, a person, currently the subject.")
-- A **query** — what this token *wants to know*, asked from its own point
-  of view. ("I'm the word 'said' — who's doing the saying?")
-- A **value** — what this token will actually *hand over* if another token
+- A **query**: what this token *wants to know*, asked from its own point
+  of view. ("I'm the word 'said'; who's doing the saying?")
+- A **value**: what this token will actually *hand over* if another token
   consults it. Not the same as the key; the key is the label, the value is
   the content behind the label.
 
-Every token asks its query against *every other token's key* — not just
+Every token asks its query against *every other token's key*, not just
 its neighbors, the whole shelf. The match strength between a query and a
 key is a single number: their **dot product**. Two vectors that point in
 a similar direction score high; unrelated ones score near zero. Run one
 token's query against all the keys and you get a row of raw match scores,
 one per token in the sequence.
 
-Raw scores aren't a budget yet — they're just numbers, and they need to
-turn into something that behaves like "how much attention to pay,"
-which should be nonnegative and should add up to a whole. That's exactly
-what **softmax** does: it exponentiates every score and divides by their
-sum, so the row becomes a set of weights between 0 and 1 that add up to
-1 — a spending budget, allocated across every earlier token, however the
-scores tilted it. The token that matched best gets the biggest slice; the
-rest get what's left.
+Raw scores aren't a budget yet. They're just numbers, and they need to
+turn into something that behaves like "how much attention to pay," which
+should be nonnegative and should add up to a whole. That's exactly what
+**softmax** does: it exponentiates every score and divides by their sum,
+so the row becomes a set of weights between 0 and 1 that add up to 1: a
+spending budget, allocated across every earlier token, however the scores
+tilted it. The token that matched best gets the biggest slice; the rest
+get what's left.
 
 The output for that query is then nothing more than a **weighted blend of
 values**, spent according to that budget: take every token's value
 vector, scale it by its weight, and add them all up. The querying token
-walks away holding a mixture — mostly the value of whoever it matched
+walks away holding a mixture: mostly the value of whoever it matched
 best, with a trace of everyone else it partially matched.
 
 <AttentionLens client:visible />
@@ -66,11 +66,11 @@ best, with a trace of everyone else it partially matched.
 Click «said» in the sentence above and watch the row light up. In the
 default view (layer 2, head 3) it's decisive: 88% of its whole attention
 budget lands on a single earlier token, «Alice», barely glancing at
-anything else — including «and», one word closer, and «Queen», the
+anything else, including «and», one word closer, and «Queen», the
 sentence's actual grammatical subject. That's the honest texture of a
 tiny, fuzzy model: this head learned *some* useful notion of "who's
 around," not the grammar-textbook one. Now switch to layer 1, head 1, and
-the confidence evaporates — weight smeared thinly across word-fragments
+the confidence evaporates: weight smeared thinly across word-fragments
 like «to», «ly», «ed», no discernible story at all. Four heads, one
 sentence, four different opinions; some heads specialize cleanly and
 some don't, exactly the way training happened to shake out. Switch to
@@ -80,30 +80,30 @@ and values are built from vectors that layer 1 already mixed, so by the
 second pass a token's "key" already carries a little of its neighbors'
 content baked in. Attention stacked on attention.
 
-Now, why does this beat recurrence — not just "differently," but
-structurally better? Two reasons, and both trace straight back to
-chapter 8's complaints.
+Why does this beat recurrence? Not just "differently," but structurally
+better. Two reasons, and both trace straight back to chapter 8's
+complaints.
 
 **No distance penalty.** In an RNN, information from ten steps back has
 survived ten multiplications by the time it's used; from a thousand steps
-back, a thousand — that's the vanishing-over-time problem chapter 8 spent
+back, a thousand. That's the vanishing-over-time problem chapter 8 spent
 a whole figure demonstrating. Attention has no such decay built in: token
 1 and token 1000 are exactly one dot product apart, the same as token 1
 and token 2. Reachability doesn't degrade with distance, because there's
-no chain to travel down — every query hits every key directly, in one
+no chain to travel down: every query hits every key directly, in one
 hop.
 
 **Every position computes in parallel.** An RNN's hidden state at step
-t needs step t-1 finished first — that's a sequential dependency chapter
+t needs step t-1 finished first. That's a sequential dependency chapter
 8's footer flagged as the real cost of recurrence, the reason it can't
 use a GPU's parallelism across time. Attention has no such ordering
 requirement: every query, every key, every value, every dot product for
 every position, can all be computed simultaneously, because none of them
-depends on another position's *output* — only on the shared input. That's
+depends on another position's *output*, only on the shared input. That's
 the property that let transformers absorb GPU-scale hardware and actually
 use it.
 
-None of this is free. Every query is compared against every key — for a
+None of this is free. Every query is compared against every key: for a
 sequence of length T, that's T² comparisons, growing quadratically as
 sequences get longer. Doubling the context doesn't double the cost; it
 quadruples it. That bill comes due explicitly in chapter 16, once
@@ -121,10 +121,10 @@ next; softmax turns each row into weights; multiplying by $V$ produces the
 blended output.
 
 Why $\sqrt{d_k}$? Dot products between random vectors grow with
-dimension — summing $d_k$ terms pushes the typical magnitude of $q \cdot
+dimension: summing $d_k$ terms pushes the typical magnitude of $q \cdot
 k$ up roughly proportional to $\sqrt{d_k}$. Left unscaled, scores land far
-out on softmax's tails, where — exactly like the saturated sigmoid from
-chapter 2 — one output crowds toward 1 and the rest toward 0. The
+out on softmax's tails, where, exactly like the saturated sigmoid from
+chapter 2, one output crowds toward 1 and the rest toward 0. The
 function stops being *responsive*: its slope vanishes, and gradients
 carrying "which token should I have attended to more" stop flowing.
 Dividing by $\sqrt{d_k}$ rescales the scores back into softmax's
@@ -133,7 +133,7 @@ choosing an activation with a live slope in chapter 2.
 
 **Causal masking**, used throughout the figure above, is a small addition
 on top: before softmax, set every score where key position $>$ query
-position to $-\infty$, so its weight becomes exactly 0 — a token can
+position to $-\infty$, so its weight becomes exactly 0: a token can
 consult the past and itself, never the future. Necessary for
 next-token prediction (chapter 13): a model learning to predict word
 $t{+}1$ can't be allowed to peek at it while training on word $t$.
@@ -145,18 +145,18 @@ $t{+}1$ can't be allowed to peek at it while training on word $t$.
 Strip away the story and attention is three matrix multiplies and a
 softmax: $Q = XW_Q$, $K = XW_K$, $V = XW_V$, then $QK^\top$, then softmax,
 then multiply by $V$. Every ounce of "intelligence" the operation has
-lives entirely in the learned projections $W_Q$, $W_K$, $W_V$ — the
+lives entirely in the learned projections $W_Q$, $W_K$, $W_V$: the
 attention formula itself never changes; training only ever adjusts which
 questions get asked and which labels get published.
 
-Worth banking now for chapter 16: the $K$ and $V$ matrices this chapter
-computes are exactly what gets cached at inference time. Once a token's
-key and value are computed, they never change — generating token $t{+}1$
-reuses every earlier token's $K$ and $V$ instead of recomputing them, which
-is why serving a long conversation is a memory problem as much as a
-compute one. And when you hear **FlashAttention** or similar — those
-aren't new formulas; they're memory-layout engineering of this *exact*
-softmax($QK^\top/\sqrt{d_k}$)$V$, reordered to avoid ever materializing
-the full $T \times T$ score matrix in slow memory.
+This is worth banking for chapter 16: the $K$ and $V$ matrices this
+chapter computes are exactly what gets cached at inference time. Once a
+token's key and value are computed, they never change: generating token
+$t{+}1$ reuses every earlier token's $K$ and $V$ instead of recomputing
+them, which is why serving a long conversation is a memory problem as
+much as a compute one. And when you hear **FlashAttention** or similar,
+those aren't new formulas; they're memory-layout engineering of this
+*exact* softmax($QK^\top/\sqrt{d_k}$)$V$, reordered to avoid ever
+materializing the full $T \times T$ score matrix in slow memory.
 
 </EngineerFooter>

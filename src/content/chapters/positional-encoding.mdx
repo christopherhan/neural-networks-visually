@@ -9,34 +9,34 @@ import EngineerFooter from '../../components/layout/EngineerFooter.astro';
 import PositionalWaves from '../../components/figures/positional/PositionalWaves.svelte';
 
 Attention (chapter 10) computes, for every token, a weighted sum over every
-other token's value vector — and the weights come from a dot product between
+other token's value vector, and the weights come from a dot product between
 query and key. Nowhere in that computation does the *position* of a token
 appear. Shuffle the words in a sentence and feed attention the same set of
 vectors in a different order, and it produces the same set of outputs in the
 same shuffled order: same amounts, same ingredients, no idea which one came
 first. Attention treats its input as a **set**, not a sequence. "The dog bit
-the man" and "the man bit the dog" would look identical to it — same six
-tokens, same bag — unless something *else* tells it who came first.
+the man" and "the man bit the dog" would look identical to it: same six
+tokens, same bag, unless something *else* tells it who came first.
 
 That something else has to be injected as data, because there's nowhere else
-to put it. The trick the original Transformer paper used: give every
-position its own fixed fingerprint — a vector — and add it directly onto
+to put it. The original Transformer paper's trick was to give every
+position its own fixed fingerprint, a vector, and add it directly onto
 that position's token embedding before anything else happens. Position 0
 gets fingerprint zero, position 1 gets fingerprint one, and so on, up to
 however far the model reads. Once that fingerprint is baked into the vector,
 attention can tell tokens apart by position the same way it already tells
-them apart by content — because, as far as the matrix math is concerned,
+them apart by content, because, as far as the matrix math is concerned,
 position *is* now content.
 
 The question is what makes a good fingerprint. Binary counting would work
-in principle — a fixed-size code, one bit per digit — but bits are discrete
+in principle: a fixed-size code, one bit per digit. But bits are discrete
 and jagged, a bad fit for a network trained by smooth gradients. The
 sinusoidal answer keeps the spirit of binary counting (each dimension flips
 at its own rate) but makes it continuous: every dimension of the fingerprint
 is a sine or cosine wave, and each pair of dimensions oscillates at its own
 frequency, geometrically spaced from fast to slow across the vector. Low
-dimensions complete a full cycle in a few positions — a fine-grained ruler
-tick. High dimensions take thousands of positions to complete one cycle — a
+dimensions complete a full cycle in a few positions: a fine-grained ruler
+tick. High dimensions take thousands of positions to complete one cycle: a
 coarse tick, like the hour hand next to the second hand. Stack all the
 dimensions together and you get a multi-scale ruler: read a few of a
 position's dimensions and you know roughly where it sits in a fine
@@ -47,29 +47,29 @@ out to very long sequences.
 
 Slide position A and position B around and watch two things. First, the
 curves: two positions near each other trace almost the same wave, dimension
-by dimension — a small phase shift, nothing more. Second, the number: cosine
+by dimension: a small phase shift, nothing more. Second, the number: cosine
 similarity between two rows starts high when the positions are close and
 falls as they drift apart. That's the property that makes this whole scheme
-useful — not that each position has *a* fingerprint, but that *nearby*
+useful: not that each position has *a* fingerprint, but that *nearby*
 fingerprints are similar. It means attention can learn a rule like "look at
 the token right before me" using ordinary dot products, the same mechanism
-it uses for everything else. No special-cased "distance" operation required
-— proximity in position becomes proximity in vector space, for free.
+it uses for everything else. No special-cased "distance" operation is
+required. Proximity in position becomes proximity in vector space, for free.
 
-Worth being honest about what this site actually does: the tiny transformer
-powering the other chapters' figures doesn't use these sinusoids at all. It
-uses **learned position embeddings** — one trainable vector per position,
-initialized randomly and adjusted by gradient descent exactly like the token
-embeddings sit next to them. That's simpler to implement and is what GPT-2
-and plenty of production models still do; the sinusoidal family above is the
-classic closed-form scheme from the 2017 paper, included here because it's
-the clearest way to *see* the idea of a positional fingerprint before you
-just hand the job to backprop. A third family, increasingly the modern
-default, is **RoPE** (rotary position embedding): instead of adding a
-position vector to the embedding, it rotates the query and key vectors
-themselves by a position-dependent angle before the dot product — same
-"nearby positions look alike" property, but built into the attention
-computation rather than bolted onto the input.
+One honest caveat about this site: the tiny transformer powering the other
+chapters' figures doesn't use these sinusoids at all. It uses **learned
+position embeddings**: one trainable vector per position, initialized
+randomly and adjusted by gradient descent exactly like the token embeddings
+sit next to them. That's simpler to implement and is what GPT-2 and plenty
+of production models still do; the sinusoidal family above is the classic
+closed-form scheme from the 2017 paper, included here because it's the
+clearest way to *see* the idea of a positional fingerprint before you just
+hand the job to backprop. A third family, increasingly the modern default,
+is **RoPE** (rotary position embedding): instead of adding a position
+vector to the embedding, it rotates the query and key vectors themselves by
+a position-dependent angle before the dot product: the same "nearby
+positions look alike" property, but built into the attention computation
+rather than bolted onto the input.
 
 <MathAside>
 
@@ -77,7 +77,7 @@ Sinusoidal PE: for dimension pairs $2i, 2i{+}1$ and position $pos$,
 $PE_{(pos,\,2i)} = \sin\!\left(pos / 10000^{2i/d}\right)$,
 $PE_{(pos,\,2i+1)} = \cos\!\left(pos / 10000^{2i/d}\right)$. The reason this
 particular family was chosen over, say, arbitrary smooth waves: for any
-fixed offset $k$, $PE_{pos+k}$ is a **linear function** of $PE_{pos}$ — each
+fixed offset $k$, $PE_{pos+k}$ is a **linear function** of $PE_{pos}$: each
 2D pair is a rotation of the previous one by a fixed angle, so
 $PE_{pos+k}$ is just $PE_{pos}$ rotated by $k$ steps. A linear layer can
 therefore learn to compute "the token $k$ positions back" directly from the
@@ -89,15 +89,15 @@ needs.
 <EngineerFooter>
 
 Mechanically, positions cost nothing architecturally: `pos_emb[:T]` is just
-added elementwise to `tok_emb[ids]` before layer 1 — same tensor shape, same
+added elementwise to `tok_emb[ids]` before layer 1: same tensor shape, same
 matrix multiplies downstream, no new operation type. But that convenience
 has a ceiling: a model's **context length** is, in part, a position-encoding
 limit. Learned embeddings only have entries for positions they were trained
-on — feed position 2049 to a model trained on 2048 slots and there's no
+on: feed position 2049 to a model trained on 2048 slots and there's no
 vector to look up. Sinusoids extrapolate a little further by construction,
 but degrade past their training range too. This is precisely the problem
-RoPE and its cousin ALiBi were built to fix — relative, rotation- or
-bias-based schemes that generalize far more gracefully — which is a big part
+RoPE and its cousin ALiBi were built to fix (relative, rotation- or
+bias-based schemes that generalize far more gracefully), which is a big part
 of why modern models stretched from a few thousand tokens of context to
 100k+ without a fundamentally new architecture underneath.
 

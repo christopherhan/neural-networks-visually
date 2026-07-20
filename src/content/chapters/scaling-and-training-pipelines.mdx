@@ -10,63 +10,63 @@ import TrainingPipeline from '../../components/figures/pipeline/TrainingPipeline
 
 Time to zoom all the way out. The model powering this site's figures has
 about 130,000 parameters, trained in about five laptop-minutes on 547KB
-of text — three Gutenberg novels. A frontier model run by a lab today has
+of text, three Gutenberg novels. A frontier model run by a lab today has
 on the order of a *trillion* parameters, trains for months across
 thousands of GPUs, and reads a meaningful fraction of the public internet.
 That's something like ten billion times more parameters, and every other
-dial — data, compute, cluster size — turned up by a similarly absurd
-factor. Here's the part worth sitting with: it is *the same loop*. Tokens
-in, embeddings, attention, blocks, predict the next one, backprop, repeat
-— chapters 9 through 13, unmodified. Nobody discovered a fundamentally
+dial (data, compute, cluster size) turned up by a similarly absurd
+factor. What's worth sitting with is that it is *the same loop*. Tokens
+in, embeddings, attention, blocks, predict the next one, backprop, repeat:
+chapters 9 through 13, unmodified. Nobody discovered a fundamentally
 different algorithm to get from a toy to a frontier model. They just kept
-turning the same three dials — parameters, data, compute — and something
+turning the same three dials (parameters, data, compute), and something
 remarkable happened when they did.
 
 That remarkable thing has a name: **scaling laws**. Plot loss against
-model size, or against dataset size, or against total training compute —
-on log-log axes, across many orders of magnitude — and the points fall
+model size, or against dataset size, or against total training compute
+(on log-log axes, across many orders of magnitude), and the points fall
 on a strikingly smooth, predictable curve. Not "roughly trends down."
 *Smoothly* down, in a way you can fit and extrapolate. That predictability
 is the whole reason nine-figure training runs get greenlit at all: a lab
 can train a family of small, cheap models, fit the curve their losses
-trace out, and forecast — with real confidence, before writing the check
-for the giant run — roughly what loss a 100x larger model will land at.
-Capacity planning for a model that doesn't exist yet, the same way you'd
-forecast infrastructure load from a smaller pilot deployment.
+trace out, and forecast, with real confidence and before writing the
+check for the giant run, roughly what loss a 100x larger model will land
+at. Capacity planning for a model that doesn't exist yet, the same way
+you'd forecast infrastructure load from a smaller pilot deployment.
 
 The curve also settled an argument that used to be guesswork: for a fixed
 compute budget, how should it split between a bigger model and more data?
-Early scaling work under-weighted data — models kept getting bigger while
+Early scaling work under-weighted data: models kept getting bigger while
 training sets grew more slowly, and it turned out that was leaving
 performance on the table. The **Chinchilla** finding was that parameters
 and data need to scale *together*, roughly in step; a lot of earlier
 large models were, in a specific technical sense, *undertrained*, not
-undersized — stuffed with capacity they never got enough tokens to use
+undersized: stuffed with capacity they never got enough tokens to use
 well. Toy-scale intuition, straight from chapter 3: an oversized network
 with too little data to constrain it is just a fancier way to overfit.
 
-But here's the catch, and it's the second half of this chapter. Loss on
-the next-token objective is a real, honest, useful number — and a model
+But there's a catch, and it's the second half of this chapter. Loss on
+the next-token objective is a real, honest, useful number, and a model
 trained to convergence on it is still, fundamentally, only good at one
 thing: predicting the statistically likely next token given everything
-it's read. That's autocomplete, extremely good autocomplete, but not
-something that reliably follows an instruction, refuses a harmful
-request, or knows when to say "I don't know." Getting from "the low-loss
-next-token predictor" to "the assistant you actually talk to" is a
-separate pipeline, bolted on after pretraining finishes.
+it's read. That's autocomplete, extremely good autocomplete, but it
+doesn't reliably follow an instruction, and it has no built-in notion of
+refusing a harmful request or admitting "I don't know." Getting from "the
+low-loss next-token predictor" to "the assistant you actually talk to" is
+a separate pipeline, bolted on after pretraining finishes.
 
 <TrainingPipeline client:visible />
 
-Walk it stage by stage. **Data** is the unglamorous foundation — scrape,
-filter, deduplicate, mix — done well before any GPU touches a matrix
+Walk it stage by stage. **Data** is the unglamorous foundation (scrape,
+filter, deduplicate, mix) done well before any GPU touches a matrix
 multiply, and it moves final quality more than most people expect.
 **Pretraining** is chapter 13's loop, run at the scale described above;
-it outputs a base model, the magnificent autocomplete. **SFT** —
-supervised fine-tuning — shows that base model a much smaller, curated
+it outputs a base model, the magnificent autocomplete. **SFT**
+(supervised fine-tuning) shows that base model a much smaller, curated
 set of (prompt, good response) pairs and nudges it toward behaving like
 something that answers questions instead of just continuing text.
-**RLHF** (or its AI-assisted cousin, RLAIF) is where preference data —
-humans or models ranking candidate answers — trains a reward signal that
+**RLHF** (or its AI-assisted cousin, RLAIF) is where preference data,
+humans or models ranking candidate answers, trains a reward signal that
 further shapes tone, helpfulness, and refusals, and increasingly trains
 models to spend extra tokens reasoning before committing to an answer.
 **Deployment** turns a finished set of weights into a service: quantize
@@ -88,8 +88,8 @@ objective and the entire generation procedure (chapter 13); and scaling
 that loop up, then routing its output through a pipeline of further
 training stages, is how a research idea becomes a product (chapter 14).
 You now know, in real mechanical detail, what a "GPT" *is*. Part IV asks
-a different question: what does the frontier change *inside* that block —
-sparser layers, longer context, better post-training — to push the same
+a different question: what does the frontier change *inside* that block
+(sparser layers, longer context, better post-training) to push the same
 architecture further.
 
 <MathAside>
@@ -98,13 +98,13 @@ A widely-cited empirical fit for pretraining loss as a function of model
 size $N$ (parameters) and dataset size $D$ (tokens) takes the form
 $L(N, D) \approx E + \dfrac{A}{N^{\alpha}} + \dfrac{B}{D^{\beta}}$, where
 $E$ is an irreducible floor and the two power-law terms shrink toward
-zero as $N$ and $D$ grow — with exponents in the neighborhood of
+zero as $N$ and $D$ grow, with exponents in the neighborhood of
 $\alpha \approx 0.34$, $\beta \approx 0.28$ in published fits. Treat those
 constants as illustrative, not universal: the exact values are specific
 to a given architecture, tokenizer, and data distribution, and every lab
-re-fits them on its own runs. The shape of the law — smooth, predictable,
-diminishing returns on each axis — is the durable part; the numbers
-attached to it are not.
+re-fits them on its own runs. The shape of the law (smooth and
+predictable, with diminishing returns on each axis) is the durable part;
+the numbers attached to it are not.
 
 A standard back-of-envelope rule for training compute: $C \approx 6ND$
 FLOPs, where $N$ is parameter count and $D$ is training tokens (roughly:
@@ -119,9 +119,9 @@ loss against total compute rather than against $N$ or $D$ alone.
 
 Pretraining and inference are different workloads with different SLOs,
 and it's worth naming that difference plainly: **training is a batch
-job** — long-running, throughput-optimized, tolerant of a checkpoint
+job**: long-running, throughput-optimized, tolerant of a checkpoint
 restart after a hardware failure, billed by GPU-hour. **Inference is a
-service** — latency-sensitive, uptime-sensitive, billed per request or
+service**: latency-sensitive, uptime-sensitive, billed per request or
 per token, and, over a deployed model's full lifetime, usually the
 larger compute line item by far, because it runs continuously against
 however much traffic the product gets while training happens once.
@@ -131,8 +131,8 @@ infrastructure you already run: the data stage is an **ETL pipeline**
 (extract from the web, transform via filtering and dedup, load into
 training shards); pretraining plus SFT plus RLHF is a **CI/CD pipeline**
 where the build artifact is a weights file instead of a binary; and
-capability evals — benchmark suites run before a model ships, gating
-whether it's allowed to advance to the next stage — are the **release
+capability evals (benchmark suites run before a model ships, gating
+whether it's allowed to advance to the next stage) are the **release
 tests**, the same gate a deploy pipeline runs before promoting a build
 to production, just measuring "does this model reason and refuse
 correctly" instead of "does this service pass its integration suite."
