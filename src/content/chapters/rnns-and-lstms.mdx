@@ -9,28 +9,28 @@ import EngineerFooter from '../../components/layout/EngineerFooter.astro';
 import MemoryDecayFigure from '../../components/figures/rnn/MemoryDecayFigure.svelte';
 
 Everything so far looks at its input all at once. But language, audio,
-sensor logs, keystrokes — sequences — arrive one piece at a time, and the
+sensor logs, keystrokes (sequences) arrive one piece at a time, and the
 meaning of *now* depends on *before*. "The trophy didn't fit in the
-suitcase because **it** was too big" — resolving that "it" requires
+suitcase because **it** was too big." Resolving that "it" requires
 remembering two nouns from earlier in the stream.
 
 The **recurrent** answer is beautifully economical: give the network a
-loop. One set of weights processes each time step, and alongside the input
-it receives its *own previous output* — a hidden state `h`, the network's
-running summary of everything so far. Memory in one extra arrow. Play with
-the smallest possible version:
+loop. One set of weights processes each time step, and alongside the
+input it receives its *own previous output*, a hidden state `h`, the
+network's running summary of everything so far. Memory in one extra
+arrow. Play with the smallest possible version:
 
 <MemoryDecayFigure client:visible />
 
-That single slider `w` decides the fate of a memory. Drop a spike at step 2
-and watch: at w = 0.65, each tick keeps only 65% of the last — the echo
+That single slider `w` decides the fate of a memory. Drop a spike at step
+2 and watch: at w = 0.65, each tick keeps only 65% of the last: the echo
 dies within five steps, drowned long before step 20. Slide toward 1.0 and
 the echo stretches. Push past 1.0 and something strange happens: the loop
-feeds itself faster than tanh can squash it, and the memory *latches* —
+feeds itself faster than tanh can squash it, and the memory *latches*:
 self-sustaining, refusing to fade.
 
-Now connect this to training. Unroll the loop across 20 steps and you get —
-squint — a 20-layer network in which **every layer shares the same
+Now connect this to training. Unroll the loop across 20 steps and you get
+(squint) a 20-layer network in which **every layer shares the same
 weight**. Chapter 6's vanishing gradient returns, concentrated: blame
 flowing back from step 20 to step 2 crosses eighteen copies of the same
 multiplication. Below 1, it vanishes exponentially; above 1, it explodes.
@@ -40,28 +40,29 @@ back to deposit them.
 
 The 1997 fix is one of the great engineering moves in the field. The
 **LSTM** (Long Short-Term Memory) stops hoping the loop behaves and takes
-*control* of it: alongside `h` it keeps a protected cell state — a conveyor
-belt — governed by learned **gates**. A *forget gate* decides what fraction
-of the old memory survives (a learned, per-moment version of our `w`
-slider). An *input gate* decides what new information gets written. An
-*output gate* decides what's revealed. The gates are tiny neurons
-themselves — so the network *learns when to remember and when to forget*,
-instead of decaying at a fixed rate. On the conveyor belt, gradients travel
-back through addition, not repeated multiplication — the long-gap memory
-problem, largely solved.
+*control* of it: alongside `h` it keeps a protected cell state (a
+conveyor belt) governed by learned **gates**. A *forget gate* decides
+what fraction of the old memory survives (a learned, per-moment version
+of our `w` slider). An *input gate* decides what new information gets
+written. An *output gate* decides what's revealed. The gates are tiny
+neurons themselves, so the network *learns when to remember and when to
+forget*, instead of decaying at a fixed rate. On the conveyor belt,
+gradients travel back through addition, not repeated multiplication. The
+long-gap memory problem, largely solved.
 
-For fifteen years, LSTMs ran the show: translation, speech recognition,
-your phone's autocomplete. But note the shape of what they do: all of
-history, squeezed through one fixed-size hidden state, step by step, in
-order. What if — Part III asks — instead of *carrying* a compressed memory
-forward, the network could simply *look back* at any part of the sequence,
-directly, whenever it needs to?
+For fifteen years, LSTMs ran the show: translation and speech recognition
+were built on them, and so was the autocomplete on your phone. But note
+the shape of what they do: all of history, squeezed through one
+fixed-size hidden state, step by step, in order. What if, Part III asks,
+instead of *carrying* a compressed memory forward, the network could
+simply *look back* at any part of the sequence, directly, whenever it
+needs to?
 
 <MathAside>
 
 Unrolled recurrence: $h_t = \tanh(W_h h_{t-1} + W_x x_t)$, so
 $\frac{\partial h_T}{\partial h_k} = \prod_{t=k+1}^{T} W_h^\top\,
-\mathrm{diag}(\tanh'(z_t))$ — the same Jacobian product as chapter 6, but
+\mathrm{diag}(\tanh'(z_t))$, the same Jacobian product as chapter 6, but
 with the *same* $W_h$ repeated, which is why the spectral radius of $W_h$
 so sharply separates vanish from explode. The LSTM cell update $c_t = f_t
 \odot c_{t-1} + i_t \odot \tilde{c}_t$ is additive, giving gradients a
@@ -72,11 +73,11 @@ multiplication-free path backward.
 <EngineerFooter>
 
 An RNN is a fold over a sequence with learned state; an LSTM is that fold
-with an engineered highway for the carry. The operational pain is that the
-fold is *sequential* — step t needs step t−1, so you can't parallelize
+with an engineered highway for the carry. The operational pain is that
+the fold is *sequential*: step t needs step t−1, so you can't parallelize
 across time on a GPU the way you can across an image. That serialization,
 as much as the memory problem, is what Part III's attention architecture
 kills: it trades the O(1)-memory loop for parallel random access over the
-whole sequence. Part II complete — the classical era ends here.
+whole sequence. Part II complete. The classical era ends here.
 
 </EngineerFooter>
