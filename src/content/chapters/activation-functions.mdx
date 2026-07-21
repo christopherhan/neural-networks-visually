@@ -42,10 +42,13 @@ Each has a personality:
   its slope doesn't fade at large inputs the way the squashers' do.
 
 Every *useful* activation has a meaningful slope somewhere, and that slope
-is what learning runs on. It answers the one question training keeps
-asking: *"if the neuron's sum shifts a little, which way does the output
-move?"* A function that answers honestly can be taught. A function that
-shrugs, like the step, cannot.
+is what learning runs on. Training keeps asking one question of every
+neuron: *if your sum shifts a little, which way does your output move, and
+by how much?* Sigmoid, tanh, and ReLU give real answers, and those answers
+are what weight adjustment steers by, as the next two chapters show. The
+step's answer is always "not at all": its slope is zero everywhere, so no
+directional signal survives passing through it, and nothing behind a step
+neuron can learn.
 
 <MathAside>
 
