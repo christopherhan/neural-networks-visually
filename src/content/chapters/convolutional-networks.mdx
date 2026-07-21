@@ -35,7 +35,7 @@ the same machinery wearing photo-editing clothes. Your phone's filters
 are convolutions.)
 
 The savings show up clearly once you count the weights: that kernel asked its question at 144 positions using
-**9 weights total**. A dense layer answering the same 144 questions would
+9 weights total. A dense layer answering the same 144 questions would
 have needed 144 separate neurons × 196 inputs ≈ 28,000 weights. Weight
 sharing is a ~3000× discount, and it comes with a bonus insight baked in:
 the pattern detector works *everywhere by construction*, so the network

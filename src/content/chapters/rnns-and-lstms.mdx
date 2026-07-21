@@ -26,12 +26,12 @@ That single slider `w` decides the fate of a memory. Drop a spike at step
 2 and watch: at w = 0.65, each tick keeps only 65% of the last: the echo
 dies within five steps, drowned long before step 20. Slide toward 1.0 and
 the echo stretches. Push past 1.0 and something strange happens: the loop
-feeds itself faster than tanh can squash it, and the memory *latches*:
-self-sustaining, refusing to fade.
+feeds itself faster than tanh can squash it, and the memory *latches*
+into a self-sustaining state that never fades.
 
 Now connect this to training. Unroll the loop across 20 steps and you get
-(squint) a 20-layer network in which **every layer shares the same
-weight**. Chapter 6's vanishing gradient returns, concentrated: blame
+(squint) a 20-layer network in which every layer shares the same
+weight. Chapter 6's vanishing gradient returns, concentrated: blame
 flowing back from step 20 to step 2 crosses eighteen copies of the same
 multiplication. Below 1, it vanishes exponentially; above 1, it explodes.
 The knife-edge in the figure *is* the training problem: plain RNNs can't
@@ -78,6 +78,6 @@ the fold is *sequential*: step t needs step t−1, so you can't parallelize
 across time on a GPU the way you can across an image. That serialization,
 as much as the memory problem, is what Part III's attention architecture
 kills: it trades the O(1)-memory loop for parallel random access over the
-whole sequence. Part II is complete. The classical era ends here.
+whole sequence. Part II is complete.
 
 </EngineerFooter>

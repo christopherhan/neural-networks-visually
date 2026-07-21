@@ -20,7 +20,7 @@ layer two combines edges into motifs, and deeper layers combine motifs
 into the answer: reusable parts, combined hierarchically. It's the same
 reason you write functions instead of one enormous main(). Depth is
 *composition*; width is *vocabulary*. Most problems want both, but
-composition is where the magic lives.
+composition usually does more of the work.
 
 Stacking twenty layers doesn't simply multiply that profit. Remember how blame travels
 (chapter 4): backward through every operation, *multiplied* by each local
@@ -48,8 +48,8 @@ Now flip to **fan-in scaled** and re-roll. Same architecture, same
 randomness, but each weight is sized against how many inputs its neuron
 sums (Xavier initialization, what every framework quietly does today), so
 each layer's factor in the great product sits near 1. The bars level out,
-every draw. No new math, no new architecture: the villain of a decade
-dissolved by *choosing the starting numbers carefully*.
+every draw. Nothing about the math or the architecture changed; the villain
+of a decade dissolved because the starting numbers were *chosen carefully*.
 
 The other levers are cut from the same cloth. Activations with slope 1
 (ReLU, whose flat-shouldered rivals you met in chapter 2) stop the slopes

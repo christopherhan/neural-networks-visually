@@ -20,10 +20,9 @@ into a vector that lives in a space where "similar" is a real, measurable
 thing. Now we can cash the promise in. This is attention, and it's the
 single mechanism that made everything since 2017 possible.
 
-Stated as plainly as possible: **keep every position's vector around,
-don't compress anything, and let each new position ask questions of all
-of them.** No squeezing, no forgetting by default, no fixed-size
-bottleneck, just direct access.
+**Keep every position's vector around instead of compressing it, and let
+each new position ask questions of all of them.** No squeezing, no
+forgetting by default, no fixed-size bottleneck, just direct access.
 
 The clearest way to build intuition for how "asking a question" becomes
 arithmetic is a library metaphor, and it stays concrete all the way down
@@ -71,10 +70,10 @@ sentence's actual grammatical subject. That's the honest texture of a
 tiny, fuzzy model: this head learned *some* useful notion of "who's
 around," not the grammar-textbook one. Now switch to layer 1, head 1, and
 the confidence evaporates: weight smeared thinly across word-fragments
-like «to», «ly», «ed», no discernible story at all. Four heads, one
-sentence, four different opinions; some heads specialize cleanly and
-some don't, exactly the way training happened to shake out. Switch to
-layer 2 more broadly and something changes under the hood even when a
+like «to», «ly», «ed», no discernible story at all. The same sentence
+produces four different opinions depending on the head; some specialize
+cleanly and some don't, exactly the way training happened to shake out.
+Switch to layer 2 more broadly and something changes under the hood even when a
 head's picture looks similar to a layer-1 one: layer 2's queries, keys,
 and values are built from vectors that layer 1 already mixed, so by the
 second pass a token's "key" already carries a little of its neighbors'

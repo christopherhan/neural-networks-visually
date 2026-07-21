@@ -95,10 +95,10 @@ This site's model runs $d_{\text{model}} = 64$, $h = 4$ heads of dimension
 block: the four projections $W_Q, W_K, W_V, W_O$ are each $64 \times 64$,
 so $4 \cdot 64 \cdot 64 = 16{,}384$; the MLP's two layers are $64 \times
 256$ and $256 \times 64$, so $2 \cdot 64 \cdot 256 = 32{,}768$. Add the
-(tiny) LayerNorm parameters and one block costs roughly **49,000**
+(tiny) LayerNorm parameters and one block costs roughly 49,000
 weights. GPT-3 uses the identical formula at $d_{\text{model}} =
 12{,}288$: the same $12 \cdot d_{\text{model}}^2$ shape puts a single
-block at **over 1.8 billion** parameters, before counting any of its 96
+block at over 1.8 billion parameters, before counting any of its 96
 other blocks. It's the same arithmetic, four orders of magnitude apart.
 
 </MathAside>

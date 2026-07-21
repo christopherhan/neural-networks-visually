@@ -29,8 +29,9 @@ Now each token actually means something, but the vocabulary balloons
 toward unbounded: every name, typo, and made-up word needs its own slot,
 and words that obviously share structure ("run", "running", "runner") get
 completely unrelated ids, so nothing learned about one transfers to the
-others. Too fine-grained and everything is noise; too coarse and the
-vocabulary can't hold still.
+others. Characters make the vocabulary too fine-grained, and each token
+ends up nearly meaningless. Words make it too coarse, and the vocabulary
+spirals out of control.
 
 **Byte-pair encoding (BPE)** splits the difference, and it does it by
 *learning* the vocabulary from data instead of guessing it in advance.
@@ -72,8 +73,8 @@ own.
 This is the real embedding space this site's tiny model learned, flattened
 from 64 dimensions down to 2 so it fits on a page. Some structure survives
 the squashing, some doesn't. Search for a few tokens and see what lands
-near what: punctuation marks tend to huddle together, pronouns cluster
-with other pronouns, and dialogue verbs like "said" and "cried," the words
+near what: punctuation marks tend to huddle together, and pronouns cluster
+with other pronouns. Dialogue verbs like "said" and "cried," the words
 that report *how* something was spoken in these storybooks, tend to keep
 close company too. Nobody told the model that punctuation is a category or
 that "cried" is a cousin of "said." It fell out purely from which tokens
@@ -82,9 +83,10 @@ kept appearing in similar neighborhoods.
 Worth sizing this honestly. This site's tokenizer has a vocabulary of 383
 tokens and 64-dimensional embeddings, trained on three short storybooks.
 Production language models use the same exact recipe at a very different
-scale: vocabularies around 100,000 tokens, embeddings thousands of
-dimensions wide, trained on a meaningful fraction of the internet. Nothing
-about the *mechanism* changes; only the size of the matrices and the size
+scale: the vocabulary runs around 100,000 tokens, the embeddings are
+thousands of dimensions wide, and the training data spans a meaningful
+fraction of the internet. Nothing about the *mechanism* changes; only the
+size of the matrices and the size
 of the data pushing on them.
 
 <MathAside>
