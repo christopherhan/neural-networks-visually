@@ -25,7 +25,10 @@ of vocabulary this book will lean on from here forward. Call a value's
 **blame** the answer to the question: *if this value had come out slightly
 different, how much would the loss have changed?* A value with large blame
 helped cause the error; a value with zero blame didn't matter. Blame is
-this book's plain word for what the math calls a gradient, ∂loss/∂value.
+this book's plain word for what the math calls a gradient and writes as
+∂loss/∂value: the change in the loss per tiny change in this one value,
+everything else held still. The curly ∂ is chapter 3's slope idea, asked
+of one knob among millions.
 
 The algorithm itself is short. Run the graph forward to get the loss; the
 loss's own blame is 1, by definition. Then walk *backward*, and at each
