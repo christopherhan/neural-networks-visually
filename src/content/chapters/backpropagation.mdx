@@ -20,12 +20,20 @@ heart. A multiply knows that nudging one input scales through by the
 *other* input. An add passes nudges straight through. A tanh damps them by
 `1 − tanh²`.
 
-**Backpropagation** is bookkeeping over those local facts. Run the graph
-forward to get the loss. Then walk *backward*, and at each node apply one
-rule, the chain rule: *blame arriving at a node's output, times the node's
-local slope, is the blame for its input.* By the time you reach the weights,
-each one holds exactly ∂loss/∂weight. One forward pass and one backward pass
-account for every slope. Step through it yourself:
+**Backpropagation** is bookkeeping over those local facts, plus one piece
+of vocabulary this book will lean on from here forward. Call a value's
+**blame** the answer to the question: *if this value had come out slightly
+different, how much would the loss have changed?* A value with large blame
+helped cause the error; a value with zero blame didn't matter. Blame is
+this book's plain word for what the math calls a gradient, ∂loss/∂value.
+
+The algorithm itself is short. Run the graph forward to get the loss; the
+loss's own blame is 1, by definition. Then walk *backward*, and at each
+node apply one rule, the chain rule: *blame arriving at a node's output,
+times the node's local slope, is the blame for its input.* By the time you
+reach the weights, each one holds exactly ∂loss/∂weight, its own share of
+the blame. One forward pass and one backward pass account for every slope.
+Step through it yourself:
 
 <BackpropStepper client:visible />
 
