@@ -42,6 +42,13 @@ them; keep the personality.
    Train."), a question the next sentence answers, a plain statement of
    fact. The test is whether the sentence informs or performs.
 
+9. **No balanced epigrams.** The mirrored two-clause aphorism ("Depth is
+   *composition*; width is *vocabulary*." "Part I built the machine; this
+   part shapes it.") is a kicker in antithesis clothing: two short clauses
+   with parallel grammar, usually joined by a semicolon, each italicizing
+   its payload word. State the two facts as ordinary sentences that carry
+   their own explanation instead of leaning on symmetry.
+
 ## Hard constraints for any revision pass
 
 - Every number, percentage, model dimension, name, date, URL, and code

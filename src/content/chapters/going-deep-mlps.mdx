@@ -8,25 +8,25 @@ import MathAside from '../../components/layout/MathAside.astro';
 import EngineerFooter from '../../components/layout/EngineerFooter.astro';
 import GradientFlowFigure from '../../components/figures/depth/GradientFlowFigure.svelte';
 
-Welcome to Part II. Part I built the machine; this part is about *shaping*
-it. The Training Playground already whispered the first lesson: the spiral
-needed the deep network. Time to say it out loud, and then meet the tax
-that depth collects.
+Welcome to Part II, which is about shaping the machine Part I built. The
+Training Playground already hinted at the first lesson: the spiral needed
+the deep network. This chapter explains why depth helped, and then looks
+at the problem depth creates.
 
 Why does depth help at all? A one-hidden-layer network can, in principle,
 fit anything, but it does so the dumb way, by brute-force memorizing bumps.
 Stacked layers compose instead: layer one learns edges of the problem,
 layer two combines edges into motifs, and deeper layers combine motifs
-into the answer: reusable parts, combined hierarchically. It's the same
-reason you write functions instead of one enormous main(). Depth is
-*composition*; width is *vocabulary*. Most problems want both, but
-composition usually does more of the work.
+into the answer, so parts get reused instead of relearned. It's the same
+reason you write functions instead of one enormous main(). Depth buys that
+composition, while width just buys more parts per layer. Most problems
+want both, but composition usually does more of the work.
 
-Stacking twenty layers doesn't simply multiply that profit. Remember how blame travels
+Stacking twenty layers doesn't simply multiply that benefit. Remember how blame travels
 (chapter 4): backward through every operation, *multiplied* by each local
-slope and weight along the way. A product of many numbers is a fragile
-thing: unless each factor sits close to 1, it withers toward zero or blows
-up toward infinity, exponentially fast in depth. And for decades the
+slope and weight along the way. A product of many numbers is
+fragile: unless each factor sits close to 1, it withers toward zero or blows
+up toward infinity, exponentially fast in depth. For decades the
 standard textbook advice set those factors innocently wrong: "initialize
 with small random weights." Small weights, times tanh slopes that never
 exceed 1, make every factor less than 1. Watch what that does to a deep
@@ -38,27 +38,28 @@ Slide the depth up with the classic init selected, and re-roll a few
 times. The bars show the learning signal each layer receives, and the
 pattern survives every draw: by eight layers deep, layer 1 (the layer
 that must learn the most basic features of the input) hears the loss at
-a thousandth of the volume the output layer enjoys. It is, for practical
-purposes, frozen. This is the **vanishing gradient problem**, the great
+a thousandth of the volume the output layer gets, which for practical
+purposes freezes it. This is the **vanishing gradient problem**, the great
 villain of 1990s neural networks and the reason "just stack more layers"
-failed for a decade: the network's deepest wisdom was supposed to grow in
-exactly the layers that feedback could no longer reach.
+failed for a decade: the layers expected to learn the most were exactly
+the ones that feedback could no longer reach.
 
 Now flip to **fan-in scaled** and re-roll. Same architecture, same
 randomness, but each weight is sized against how many inputs its neuron
 sums (Xavier initialization, what every framework quietly does today), so
-each layer's factor in the great product sits near 1. The bars level out,
-every draw. Nothing about the math or the architecture changed; the villain
-of a decade dissolved because the starting numbers were *chosen carefully*.
+each layer's factor in the product sits near 1. The bars level out on
+every draw. Nothing about the math or the architecture changed; the
+problem of a decade dissolved because the starting numbers were *chosen
+carefully*.
 
-The other levers are cut from the same cloth. Activations with slope 1
-(ReLU, whose flat-shouldered rivals you met in chapter 2) stop the slopes
-from shrinking the product further, which is half of why ReLU became the
-default. Weights sized too *large* produce the mirror-image **exploding
+The other fixes act on the same product. Activations with slope 1 (ReLU,
+from chapter 2) stop the slopes from shrinking the product further, which
+is half of why ReLU became the default. Weights sized too *large* produce the mirror-image **exploding
 gradient** (the math aside has the condition). Skip connections (an
 identity bypass around each block, coming in Part III) let blame skip the
-multiplications entirely. Every one of these is bookkeeping about a product
-of numbers. Deep learning became possible when that bookkeeping got done.
+multiplications entirely. Every one of these is bookkeeping about the same
+product of numbers, and deep learning became possible once that
+bookkeeping got done.
 
 <MathAside>
 
