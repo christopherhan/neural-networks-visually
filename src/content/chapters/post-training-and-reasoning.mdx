@@ -52,9 +52,9 @@ not new: optimize a proxy hard enough and it stops measuring the thing you
 built it to measure, the same warning chapter 3's loss functions carried
 in miniature, now playing out at the scale of an entire model's
 personality. There is no formula that fixes this outright, only process.
-Refresh the reward model on new comparisons, cap how far the policy is
+Refresh the reward model on new comparisons, and cap how far the policy is
 allowed to wander from where it started (this chapter's math aside makes
-that cap literal), and keep human judgment in the loop somewhere a learned
+that cap literal). Keep human judgment in the loop somewhere a learned
 proxy cannot fully replace.
 
 Toggle the figure to **reasoning training** and the loop keeps its shape
@@ -83,7 +83,7 @@ and more training compute, there is now a third dial, more compute spent
 *at answer time*, thinking before responding, and it trades off against
 the other two in ways labs are still actively mapping.
 
-Which brings this book back to where it started. Chapter 1 opened with an
+That brings this book back to where it started. Chapter 1 opened with an
 `if` statement: a weighted sum of temperature and humidity, compared
 against a threshold, deciding whether to turn on a fan. "You already
 write neurons," that chapter said, and eighteen chapters later the claim
@@ -101,7 +101,7 @@ thresholds, and adjusting its weights by the gradient of some loss, the
 same three moves chapter 1's `if` statement made by hand, run an
 almost incomprehensible number of times, tuned by a training loop instead
 of by a programmer typing literal numbers into the source. That was the
-whole claim this site set out to prove, and it was already true on page
+claim this site set out to prove, and it was already true on page
 one.
 
 What this book did not cover deserves one honest paragraph rather than
@@ -123,7 +123,7 @@ beyond RLHF's mechanics and resistance to misuse, plus evaluation for
 dangerous capabilities before a model ever ships, is the field asking
 whether the loop this chapter described is actually steering these
 systems where we want them to go, at the scale they are now being built.
-All four are real, active, and worth your time next; none of them needed
+All four are real and active, worth your time next; none of them needed
 a different foundation than the one this book just spent eighteen
 chapters building.
 

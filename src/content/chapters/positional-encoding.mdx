@@ -13,10 +13,10 @@ other token's value vector, and the weights come from a dot product between
 query and key. Nowhere in that computation does the *position* of a token
 appear. Shuffle the words in a sentence and feed attention the same set of
 vectors in a different order, and it produces the same set of outputs in the
-same shuffled order: same amounts, same ingredients, no idea which one came
+same shuffled order: same ingredients, no idea which one came
 first. Attention treats its input as a **set**, not a sequence. "The dog bit
-the man" and "the man bit the dog" would look identical to it: same six
-tokens, same bag, unless something *else* tells it who came first.
+the man" and "the man bit the dog" would look identical to it: the same six
+tokens, unless something *else* tells it who came first.
 
 That something else has to be injected as data, because there's nowhere else
 to put it. The original Transformer paper's trick was to give every
@@ -49,9 +49,8 @@ Slide position A and position B around and watch two things. First, the
 curves: two positions near each other trace almost the same wave, dimension
 by dimension: a small phase shift, nothing more. Second, the number: cosine
 similarity between two rows starts high when the positions are close and
-falls as they drift apart. That's the property that makes this whole scheme
-useful: not that each position has *a* fingerprint, but that *nearby*
-fingerprints are similar. It means attention can learn a rule like "look at
+falls as they drift apart. The scheme is useful not because each position
+has *a* fingerprint, but because *nearby* fingerprints are similar. It means attention can learn a rule like "look at
 the token right before me" using ordinary dot products, the same mechanism
 it uses for everything else. No special-cased "distance" operation is
 required. Proximity in position becomes proximity in vector space, for free.

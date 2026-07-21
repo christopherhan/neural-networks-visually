@@ -18,8 +18,8 @@ tower of machinery. And it all ends in something almost embarrassingly
 modest: one probability, for every token in the vocabulary, answering a
 single question: *what comes next?*
 
-That question is the entire training objective. Not part of it, not one
-term in a larger loss: the whole thing. Feed the model a mountain of
+That question is the entire training objective, not part of it and not one
+term in a larger loss. Feed the model a mountain of
 text, ask it, at every position, to predict the token that actually comes
 next, and grade the prediction. Nothing about *how* to grade it or *how*
 to improve it needed inventing here: the loss is a landscape exactly like
@@ -27,8 +27,8 @@ chapter 3's, just cross-entropy over a softmax instead of squared error;
 the gradients that improve it flow backward exactly the way chapter 4
 worked out, unmodified. Scale a small idea up (more data, more parameters,
 more compute) and next-token prediction on ordinary text is the recipe
-behind every large language model in production. Nothing new was needed,
-just scale.
+behind every large language model in production. Nothing about the idea
+itself needed to change; only its scale did.
 
 <GenerationLab client:visible />
 
@@ -110,7 +110,7 @@ one at a time.
 <EngineerFooter>
 
 Every token generated costs one full forward pass through the entire
-model: all layers, all attention heads, the whole stack chapters 9
+model, the whole stack of layers and attention heads chapters 9
 through 12 built, run again from scratch for a sequence that's now one
 token longer. That's the mechanical reason every commercial API prices
 output tokens higher than input tokens: an input token gets processed

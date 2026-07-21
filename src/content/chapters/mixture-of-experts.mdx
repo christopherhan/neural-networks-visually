@@ -15,7 +15,8 @@ per-token network, only a third in attention, and every token that
 passes through pays the *entire* cost of that MLP, every single layer,
 every single time. The plain word "the" gets multiplied through the
 exact same 32,768-weight network as a token doing genuinely hard
-semantic work, one-size-fits-all treatment whether the size fits or not.
+semantic work. Every token gets the same one-size-fits-all treatment,
+whether or not the size actually fits.
 
 What if each token only activated the MLP capacity it actually needs?
 **Mixture-of-experts** takes that question literally. Instead of one MLP
@@ -29,8 +30,8 @@ together, so most experts never touch that token at all. Total
 weights sitting in memory. Total *compute per token* grows only with how
 many experts actually fire. Decoupling those two numbers, so a model's
 knowledge capacity can scale far faster than its per-token compute bill,
-is the entire idea. Everything else in this chapter is that idea's fine
-print.
+is what this chapter is about. Everything else here just fills in how
+that mechanism works in practice.
 
 <MoERouter client:visible />
 

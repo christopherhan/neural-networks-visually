@@ -42,7 +42,7 @@ performance on the table. The **Chinchilla** finding was that parameters
 and data need to scale *together*, roughly in step; a lot of earlier
 large models were, in a specific technical sense, *undertrained*, not
 undersized: stuffed with capacity they never got enough tokens to use
-well. Toy-scale intuition, straight from chapter 3: an oversized network
+well. This is toy-scale intuition, straight from chapter 3: an oversized network
 with too little data to constrain it is just a fancier way to overfit.
 
 But there's a catch, and it's the second half of this chapter. Loss on
@@ -118,10 +118,10 @@ loss against total compute rather than against $N$ or $D$ alone.
 <EngineerFooter>
 
 Pretraining and inference are different workloads with different SLOs,
-and it's worth naming that difference plainly: **training is a batch
+and it's worth naming that difference plainly: training is a **batch
 job**: long-running, throughput-optimized, tolerant of a checkpoint
-restart after a hardware failure, billed by GPU-hour. **Inference is a
-service**: latency-sensitive, uptime-sensitive, billed per request or
+restart after a hardware failure, billed by GPU-hour. Inference is a
+**service**: latency-sensitive, uptime-sensitive, billed per request or
 per token, and, over a deployed model's full lifetime, usually the
 larger compute line item by far, because it runs continuously against
 however much traffic the product gets while training happens once.

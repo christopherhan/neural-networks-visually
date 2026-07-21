@@ -14,7 +14,7 @@ neither number alone tells you what you need to know. Chapter 16 closed
 on a related honesty: "1 million token context" is a systems achievement
 wearing a modeling-sounding name. Both chapters were, without quite
 saying so, describing pieces of one machine. This chapter puts the
-pieces back together. Nothing new gets introduced from here, no new
+pieces back together. Nothing new gets introduced from here: no new
 formula, no new mechanism. This is the assembly chapter, where sixteen
 chapters' worth of boxes get stacked in the order a real frontier stack
 stacks them, and you get to read the result the way an engineer reads a
@@ -119,9 +119,8 @@ figure is exactly what "coarse, approximate accounting" should produce:
 real deployments spread routed capacity across more (and individually
 smaller) experts than this figure's round 256, among other
 simplifications. What survives the imprecision is the ratio: $1\text{T}
-/ 35\text{B} \approx 29\times$, the same "pay for a slice, hold the
-whole pantry" sparsity chapter 15 measured on a toy of 8 experts, now
-measured on the real thing.
+/ 35\text{B} \approx 29\times$, the same kind of sparsity chapter 15
+measured on a toy of 8 experts, now measured on the real thing.
 
 </MathAside>
 
@@ -136,7 +135,7 @@ a compressed cache and a reconstruction step at serving time (chapter
 that someone had to schedule. None of that shows up in a parameter
 count, and none of it is optional at this scale.
 
-Which is also why the moat isn't the shape. The architecture in this
+That's also why the moat isn't the shape. The architecture in this
 figure is, by design, publishable. DeepSeek and Moonshot AI wrote
 papers about it, and now this book has a working diagram of it too.
 What a lab actually protects is everything this chapter was honest

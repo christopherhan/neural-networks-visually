@@ -61,8 +61,8 @@ per-token, per-layer footprint) from different angles, sharing versus
 compressing. Worth noticing what neither one touches: attention's *compute*
 cost is still the quadratic $T^2$ chapter 10 introduced, comparing every
 query against every key. The KV cache is a memory fix layered on top of
-that unchanged compute cost, not a replacement for it. Two separate
-bills, attacked by mostly separate engineering.
+that unchanged compute cost, not a replacement for it. They are two
+separate bills, attacked by mostly separate engineering.
 
 Long context has a second ceiling worth naming honestly, back at
 position encoding rather than memory. Chapter 12's rotary position
