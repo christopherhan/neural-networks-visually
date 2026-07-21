@@ -33,6 +33,15 @@ them; keep the personality.
 7. **Bold sparingly.** Bold introduces a term the first time it appears.
    It is not emphasis seasoning.
 
+8. **No aphoristic kickers.** The compressed quip that caps a paragraph
+   ("Same wall, more paperwork." "Just scale." "Memory in one extra
+   arrow.") is a machine signature: a noun fragment or two-beat parallel
+   posing as a punchline. If the point matters, give it a full sentence
+   with a subject and a verb, or fold it into the previous sentence. Short
+   sentences remain welcome when they do work: an instruction ("Press
+   Train."), a question the next sentence answers, a plain statement of
+   fact. The test is whether the sentence informs or performs.
+
 ## Hard constraints for any revision pass
 
 - Every number, percentage, model dimension, name, date, URL, and code
