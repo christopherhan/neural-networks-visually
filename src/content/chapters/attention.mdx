@@ -23,7 +23,7 @@ single mechanism that made everything since 2017 possible.
 Stated as plainly as possible: **keep every position's vector around,
 don't compress anything, and let each new position ask questions of all
 of them.** No squeezing, no forgetting by default, no fixed-size
-bottleneck. Just direct access.
+bottleneck, just direct access.
 
 The clearest way to build intuition for how "asking a question" becomes
 arithmetic is a library metaphor, and it stays concrete all the way down
@@ -78,7 +78,7 @@ layer 2 more broadly and something changes under the hood even when a
 head's picture looks similar to a layer-1 one: layer 2's queries, keys,
 and values are built from vectors that layer 1 already mixed, so by the
 second pass a token's "key" already carries a little of its neighbors'
-content baked in. Attention stacked on attention.
+content baked in, meaning attention has stacked on attention.
 
 Why does this beat recurrence? Not just "differently," but structurally
 better. Two reasons, and both trace straight back to chapter 8's

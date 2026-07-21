@@ -17,12 +17,12 @@ Why does depth help at all? A one-hidden-layer network can, in principle,
 fit anything, but it does so the dumb way, by brute-force memorizing bumps.
 Stacked layers compose instead: layer one learns edges of the problem,
 layer two combines edges into motifs, and deeper layers combine motifs
-into the answer. Reusable parts, combined hierarchically. It's the same
+into the answer: reusable parts, combined hierarchically. It's the same
 reason you write functions instead of one enormous main(). Depth is
 *composition*; width is *vocabulary*. Most problems want both, but
 composition is where the magic lives.
 
-Stack twenty layers and profit? Not so fast. Remember how blame travels
+Stacking twenty layers doesn't simply multiply that profit. Remember how blame travels
 (chapter 4): backward through every operation, *multiplied* by each local
 slope and weight along the way. A product of many numbers is a fragile
 thing: unless each factor sits close to 1, it withers toward zero or blows

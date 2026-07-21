@@ -17,8 +17,8 @@ remembering two nouns from earlier in the stream.
 The **recurrent** answer is beautifully economical: give the network a
 loop. One set of weights processes each time step, and alongside the
 input it receives its *own previous output*, a hidden state `h`, the
-network's running summary of everything so far. Memory in one extra
-arrow. Play with the smallest possible version:
+network's running summary of everything so far, memory kept alive by one
+extra arrow. Play with the smallest possible version:
 
 <MemoryDecayFigure client:visible />
 
@@ -48,7 +48,7 @@ written. An *output gate* decides what's revealed. The gates are tiny
 neurons themselves, so the network *learns when to remember and when to
 forget*, instead of decaying at a fixed rate. On the conveyor belt,
 gradients travel back through addition, not repeated multiplication. The
-long-gap memory problem, largely solved.
+long-gap memory problem is largely solved.
 
 For fifteen years, LSTMs ran the show: translation and speech recognition
 were built on them, and so was the autocomplete on your phone. But note
@@ -78,6 +78,6 @@ the fold is *sequential*: step t needs step t−1, so you can't parallelize
 across time on a GPU the way you can across an image. That serialization,
 as much as the memory problem, is what Part III's attention architecture
 kills: it trades the O(1)-memory loop for parallel random access over the
-whole sequence. Part II complete. The classical era ends here.
+whole sequence. Part II is complete. The classical era ends here.
 
 </EngineerFooter>

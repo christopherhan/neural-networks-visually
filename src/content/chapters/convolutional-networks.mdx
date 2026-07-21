@@ -19,8 +19,8 @@ parameters.
 
 Convolution solves this by building one *tiny* neuron (a 3×3 grid of
 weights called a **kernel**) and *sliding it* across the whole image,
-computing its little weighted sum at every position. Same nine weights
-everywhere. The grid of responses it leaves behind is a **feature map**: a
+computing its little weighted sum at every position, reusing the same nine
+weights everywhere it lands. The grid of responses it leaves behind is a **feature map**: a
 picture of *where the pattern lives*. Watch it happen:
 
 <KernelPlayground client:visible />
@@ -34,7 +34,7 @@ kernel, different question asked at every location. (Sharpen and blur are
 the same machinery wearing photo-editing clothes. Your phone's filters
 are convolutions.)
 
-Now the numbers. That kernel asked its question at 144 positions using
+The savings show up clearly once you count the weights: that kernel asked its question at 144 positions using
 **9 weights total**. A dense layer answering the same 144 questions would
 have needed 144 separate neurons × 196 inputs ≈ 28,000 weights. Weight
 sharing is a ~3000× discount, and it comes with a bonus insight baked in:

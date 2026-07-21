@@ -13,7 +13,7 @@ token publishes a query, a key, and a value, and each one walks away
 holding a blend of whatever it matched best. That's real, useful mixing,
 but it's still just *one* consultation, run *one* way. The projections
 $W_Q$, $W_K$, $W_V$ are fixed once training finishes, so every token asks
-its question through the same lens every time. One habit, applied
+its question through the same lens every time, one habit, applied
 everywhere.
 
 The fix is almost embarrassingly simple: run several consultations at
@@ -99,7 +99,7 @@ so $4 \cdot 64 \cdot 64 = 16{,}384$; the MLP's two layers are $64 \times
 weights. GPT-3 uses the identical formula at $d_{\text{model}} =
 12{,}288$: the same $12 \cdot d_{\text{model}}^2$ shape puts a single
 block at **over 1.8 billion** parameters, before counting any of its 96
-other blocks. Same arithmetic, four orders of magnitude apart.
+other blocks. It's the same arithmetic, four orders of magnitude apart.
 
 </MathAside>
 

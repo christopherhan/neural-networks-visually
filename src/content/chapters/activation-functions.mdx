@@ -13,10 +13,10 @@ and XOR laughs at straight lines. Your first instinct might be to throw more
 neurons at the problem: feed the outputs of two neurons into a third layer.
 Surely stacking decisions makes them smarter.
 
-It doesn't work. Stacking linear things gives you another linear thing: a
+It doesn't, because stacking linear things gives you another linear thing: a
 weighted sum of weighted sums is still a weighted sum. Pile up a hundred
 layers of pure `w·x + b` and the whole tower collapses, mathematically, into
-one straight line. Same wall, more paperwork.
+one straight line, the same wall as before, just reached with more paperwork.
 
 Somewhere in that stack, one step has to not be a weighted sum. That step is
 the **activation function**, the σ wrapped around every neuron's sum.

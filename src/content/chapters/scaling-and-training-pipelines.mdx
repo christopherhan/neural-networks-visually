@@ -8,7 +8,7 @@ import MathAside from '../../components/layout/MathAside.astro';
 import EngineerFooter from '../../components/layout/EngineerFooter.astro';
 import TrainingPipeline from '../../components/figures/pipeline/TrainingPipeline.svelte';
 
-Time to zoom all the way out. The model powering this site's figures has
+It's time to zoom all the way out. The model powering this site's figures has
 about 130,000 parameters, trained in about five laptop-minutes on 547KB
 of text, three Gutenberg novels. A frontier model run by a lab today has
 on the order of a *trillion* parameters, trains for months across
@@ -25,13 +25,13 @@ remarkable happened when they did.
 That remarkable thing has a name: **scaling laws**. Plot loss against
 model size, or against dataset size, or against total training compute
 (on log-log axes, across many orders of magnitude), and the points fall
-on a strikingly smooth, predictable curve. Not "roughly trends down."
-*Smoothly* down, in a way you can fit and extrapolate. That predictability
+on a strikingly smooth, predictable curve: not merely trending down, but
+sloping *smoothly* down, in a way you can fit and extrapolate. That predictability
 is the whole reason nine-figure training runs get greenlit at all: a lab
 can train a family of small, cheap models, fit the curve their losses
 trace out, and forecast, with real confidence and before writing the
 check for the giant run, roughly what loss a 100x larger model will land
-at. Capacity planning for a model that doesn't exist yet, the same way
+at. That's capacity planning for a model that doesn't exist yet, the same way
 you'd forecast infrastructure load from a smaller pilot deployment.
 
 The curve also settled an argument that used to be guesswork: for a fixed
@@ -72,7 +72,7 @@ models to spend extra tokens reasoning before committing to an answer.
 **Deployment** turns a finished set of weights into a service: quantize
 it, maybe distill it into something smaller, and serve it behind caching
 and batching infrastructure built for exactly this kind of workload.
-Four stages after pretraining, none of them optional, all of them
+That's four stages after pretraining, none of them optional, all of them
 happening on top of a model whose core mechanism you now understand
 completely.
 

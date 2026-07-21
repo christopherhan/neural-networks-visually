@@ -7,7 +7,7 @@ summary: Everything so far, live - train a real network and watch it carve up th
 import EngineerFooter from '../../components/layout/EngineerFooter.astro';
 import TrainingPlayground from '../../components/figures/playground/TrainingPlayground.svelte';
 
-Four chapters of parts. Time to turn the key.
+Four chapters built the parts. Now it's time to turn the key.
 
 Below is a complete neural network: real weights and real tanh neurons,
 running on the actual autograd engine from last chapter. It's training
@@ -49,8 +49,8 @@ Every idea from Part I is on this screen at once. Neurons computing weighted
 sums (ch. 1), tanh bending them (ch. 2), a loss being driven downhill
 (ch. 3), and backprop supplying every gradient for every step (ch. 4). There
 is no other machinery. What you're watching is, at toy scale, exactly what
-happens on a GPU cluster when someone trains the models in Part III. Same
-loop, more zeros.
+happens on a GPU cluster when someone trains the models in Part III: the
+same loop, just with more zeros.
 
 Part I is complete. Part II asks the natural next questions: what happens
 when you stack *many* layers (and why gradients vanish on the way down),

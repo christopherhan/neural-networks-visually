@@ -27,8 +27,8 @@ chapter 3's, just cross-entropy over a softmax instead of squared error;
 the gradients that improve it flow backward exactly the way chapter 4
 worked out, unmodified. Scale a small idea up (more data, more parameters,
 more compute) and next-token prediction on ordinary text is the recipe
-behind every large language model in production. Nothing new was needed.
-Just scale.
+behind every large language model in production. Nothing new was needed,
+just scale.
 
 <GenerationLab client:visible />
 
@@ -39,7 +39,7 @@ that sums to one. Sampling is a weighted dice roll against that budget:
 the token with the fattest bar wins most often, but it isn't guaranteed
 to win, and the accent-red bar marking whatever actually got sampled will
 occasionally land on something other than the tallest one. That's not a
-bug. It's the mechanism working exactly as designed.
+bug; it's the mechanism working exactly as designed.
 
 The temperature slider reshapes the price list before the dice gets
 rolled. Drag it down toward 0.1 and press Next token a few times: one

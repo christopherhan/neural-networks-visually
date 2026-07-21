@@ -15,7 +15,7 @@ per-token network, only a third in attention, and every token that
 passes through pays the *entire* cost of that MLP, every single layer,
 every single time. The plain word "the" gets multiplied through the
 exact same 32,768-weight network as a token doing genuinely hard
-semantic work. One-size-fits-all, whether the size fits or not.
+semantic work, one-size-fits-all treatment whether the size fits or not.
 
 What if each token only activated the MLP capacity it actually needs?
 **Mixture-of-experts** takes that question literally. Instead of one MLP
