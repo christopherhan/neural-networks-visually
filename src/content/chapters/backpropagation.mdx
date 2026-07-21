@@ -8,32 +8,10 @@ import MathAside from '../../components/layout/MathAside.astro';
 import EngineerFooter from '../../components/layout/EngineerFooter.astro';
 import BackpropStepper from '../../components/figures/backprop/BackpropStepper.svelte';
 
-Step back and look at the whole training loop, because this chapter is the
-piece of it where learning actually lives. The cycle has four beats: the
-network makes a prediction with its current weights; a loss function scores
-how wrong that prediction was; something translates that one score into an
-adjustment for every individual weight; and the adjustments get applied
-before the cycle repeats. Chapter 3 gave us the last beat. This chapter is
-the third, the translation step, and it is the one the others can't work
-without.
-
-The reason it's hard is a mismatch of location. Wrongness gets measured at
-the *output* of the network, as a single number. The things you're allowed
-to change are the weights, buried everywhere in the interior. Knowing "the
-answer was wrong" tells no individual weight what to do about it. Should
-this one grow or shrink, and by how much? Was that one even involved? A
-single global mistake has to be converted into a million precise local
-instructions. This is the **credit assignment problem**, and until it's
-solved, a network can measure its failures but cannot learn from them.
-
-You could solve it by brute force: nudge one weight, re-run the whole
-network, and watch the loss. That yields one weight's instruction at the
-price of a full forward pass, so a million weights would cost a million
-forward passes per training step. The algorithm this chapter builds gets
-every weight's instruction from one forward pass plus one backward pass,
-for roughly the cost of running the network twice. It is called
-**backpropagation**. It is why training is affordable at all, and
-everything else in deep learning is a footnote to it.
+Last chapter ended on a cliffhanger: gradient descent needs the slope of the
+loss with respect to *every* weight (millions of them), and re-running the
+network once per weight would take geologic time. The answer is an algorithm
+so central that everything else in deep learning is a footnote to it.
 
 A network isn't a monolith. It's a **graph of tiny operations**:
 multiplication and addition wired together, then squashed by an activation
@@ -42,7 +20,7 @@ heart. A multiply knows that nudging one input scales through by the
 *other* input. An add passes nudges straight through. A tanh damps them by
 `1 − tanh²`.
 
-Backpropagation is bookkeeping over those local facts. Run the graph
+**Backpropagation** is bookkeeping over those local facts. Run the graph
 forward to get the loss. Then walk *backward*, and at each node apply one
 rule, the chain rule: *blame arriving at a node's output, times the node's
 local slope, is the blame for its input.* By the time you reach the weights,
