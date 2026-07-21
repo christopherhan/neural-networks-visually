@@ -55,8 +55,8 @@ shatter into three or four pieces, each one a chunk this exact vocabulary
 happened to learn was worth keeping.
 
 Tokenizing gets text down to a sequence of integers, but an integer id
-carries no relationships: id 47 isn't "closer" to id 48 than it is to id
-9000. The next step is to give every id a **learned vector**: a row in a
+carries no relationships: id 47 isn't "closer" to id 48 than it is to
+id 9000. The next step is to give every id a **learned vector**: a row in a
 big trainable matrix, looked up by id, called an **embedding**. Nothing
 about that vector is hand-designed. It starts random, and the only
 pressure on it is the network's single training objective, predicting the
