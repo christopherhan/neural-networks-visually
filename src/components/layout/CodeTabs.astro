@@ -1,0 +1,134 @@
+---
+import { Code } from 'astro:components';
+
+interface Variant {
+  label: string;
+  lang: 'ts' | 'python' | 'go' | 'java';
+  code: string;
+}
+
+interface Props {
+  variants: Variant[];
+}
+
+const { variants } = Astro.props;
+---
+
+<div class="codetabs" data-codetabs>
+  <div class="tabs" role="tablist" aria-label="Programming language">
+    {
+      variants.map((v, i) => (
+        <button
+          type="button"
+          role="tab"
+          aria-selected={i === 0 ? 'true' : 'false'}
+          tabindex={i === 0 ? 0 : -1}
+          data-lang={v.label}
+        >
+          {v.label}
+        </button>
+      ))
+    }
+  </div>
+  {
+    variants.map((v, i) => (
+      <div role="tabpanel" data-lang={v.label} hidden={i !== 0}>
+        <Code code={v.code} lang={v.lang} />
+      </div>
+    ))
+  }
+</div>
+
+<script>
+  // One reader, one language: picking a tab switches every CodeTabs on the
+  // page and is remembered across the site via localStorage.
+  const KEY = 'nnv-code-lang';
+
+  function activate(root: Element, label: string): boolean {
+    let found = false;
+    root.querySelectorAll<HTMLButtonElement>('[role="tab"]').forEach((tab) => {
+      const on = tab.dataset.lang === label;
+      if (on) found = true;
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+      tab.tabIndex = on ? 0 : -1;
+    });
+    if (!found) return false;
+    root.querySelectorAll<HTMLElement>('[role="tabpanel"]').forEach((panel) => {
+      panel.hidden = panel.dataset.lang !== label;
+    });
+    return true;
+  }
+
+  function activateEverywhere(label: string) {
+    document.querySelectorAll('[data-codetabs]').forEach((root) => {
+      activate(root, label);
+    });
+    try {
+      localStorage.setItem(KEY, label);
+    } catch {
+      /* private browsing: selection just won't persist */
+    }
+  }
+
+  const saved = (() => {
+    try {
+      return localStorage.getItem(KEY);
+    } catch {
+      return null;
+    }
+  })();
+
+  document.querySelectorAll('[data-codetabs]').forEach((root) => {
+    if (saved) activate(root, saved);
+
+    const tabs = Array.from(
+      root.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+    );
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => activateEverywhere(tab.dataset.lang!));
+      tab.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        e.preventDefault();
+        const next =
+          tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        activateEverywhere(next.dataset.lang!);
+        next.focus();
+      });
+    });
+  });
+</script>
+
+<style>
+  .codetabs {
+    margin: 1.1rem 0;
+  }
+  .tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: -1px;
+  }
+  .tabs button {
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    padding: 0.3rem 0.75rem;
+    background: var(--paper);
+    color: var(--muted);
+    border: 1px solid var(--line-soft);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+  }
+  .tabs button[aria-selected='true'] {
+    background: var(--paper-raised);
+    color: var(--ink-strong);
+    font-weight: 700;
+    border-color: var(--line);
+  }
+  .tabs button:hover:not([aria-selected='true']) {
+    color: var(--ink-strong);
+  }
+  .codetabs :global(pre) {
+    margin: 0;
+    border-top-left-radius: 0;
+  }
+</style>

@@ -6,6 +6,7 @@ summary: Blame flows backward - how every weight learns its share of the error.
 
 import MathAside from '../../components/layout/MathAside.astro';
 import EngineerFooter from '../../components/layout/EngineerFooter.astro';
+import CodeTabs from '../../components/layout/CodeTabs.astro';
 import BackpropStepper from '../../components/figures/backprop/BackpropStepper.svelte';
 
 Last chapter ended on a cliffhanger: gradient descent needs the slope of the
@@ -53,8 +54,8 @@ algorithm. Every number came from the same ~120-line engine that trains
 networks throughout this site, and its whole backward pass fits on a
 napkin:
 
-```ts
-// value.ts — the heart of it. Each op records how to route blame:
+<CodeTabs variants={[
+  { label: 'TypeScript', lang: 'ts', code: `// value.ts — the heart of it. Each op records how to route blame:
 mul(other) {
   const out = new Value(this.data * other.data, [this, other]);
   out._backward = () => {
@@ -69,13 +70,61 @@ backward() {
   // (the real file inlines the ten-line sort right here)
   this.grad = 1;
   for (const node of reverseTopoOrder(this)) node._backward();
-}
-```
+}` },
+  { label: 'Python', lang: 'python', code: `# value.py — the heart of it. Each op records how to route blame:
+def __mul__(self, other):
+    out = Value(self.data * other.data, (self, other))
+    def _backward():
+        self.grad += other.data * out.grad   # partner swaps in
+        other.grad += self.data * out.grad
+    out._backward = _backward
+    return out
 
-It's not pseudocode; it's lightly trimmed from
+def backward(self):
+    # topologically sort the graph, then apply the chain rule in reverse
+    self.grad = 1
+    for node in reverse_topo_order(self):
+        node._backward()` },
+  { label: 'Go', lang: 'go', code: `// value.go — the heart of it. Each op records how to route blame:
+func (v *Value) Mul(other *Value) *Value {
+	out := NewValue(v.Data*other.Data, v, other)
+	out.backward = func() {
+		v.Grad += other.Data * out.Grad // partner swaps in
+		other.Grad += v.Data * out.Grad
+	}
+	return out
+}
+
+func (v *Value) Backward() {
+	// topologically sort the graph, then apply the chain rule in reverse
+	v.Grad = 1
+	for _, node := range reverseTopoOrder(v) {
+		node.backward()
+	}
+}` },
+  { label: 'Java', lang: 'java', code: `// Value.java — the heart of it. Each op records how to route blame:
+Value mul(Value other) {
+    Value out = new Value(this.data * other.data, this, other);
+    out.backward = () -> {
+        this.grad += other.data * out.grad;   // partner swaps in
+        other.grad += this.data * out.grad;
+    };
+    return out;
+}
+
+void backward() {
+    // topologically sort the graph, then apply the chain rule in reverse
+    this.grad = 1;
+    for (Value node : reverseTopoOrder(this)) node.backward.run();
+}` },
+]} />
+
+The TypeScript tab is not pseudocode; it's lightly trimmed from
 [`src/lib/nn/value.ts`](https://github.com/christopherhan/neural-networks-visually/blob/main/src/lib/nn/value.ts)
-in this site's repository. PyTorch and JAX are this exact idea, plus tensors,
-plus a decade of engineering.
+in this site's repository, the code that actually ran the figure above. The
+other tabs are line-for-line ports so you can read it in whichever language
+you think in. PyTorch and JAX are this exact idea, plus tensors, plus a
+decade of engineering.
 
 <MathAside>
 

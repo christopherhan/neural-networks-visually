@@ -6,13 +6,17 @@ summary: From if statements to weighted sums — the smallest unit of learning.
 
 import MathAside from '../../components/layout/MathAside.astro';
 import EngineerFooter from '../../components/layout/EngineerFooter.astro';
+import CodeTabs from '../../components/layout/CodeTabs.astro';
 import PerceptronPlayground from '../../components/figures/perceptron/PerceptronPlayground.svelte';
 
 You already write neurons. Every time you code a threshold like this:
 
-```ts
-if (0.6 * temperature + 0.4 * humidity > 75) turnOnFan();
-```
+<CodeTabs variants={[
+  { label: 'TypeScript', lang: 'ts', code: 'if (0.6 * temperature + 0.4 * humidity > 75) turnOnFan();' },
+  { label: 'Python', lang: 'python', code: 'if 0.6 * temperature + 0.4 * humidity > 75:\n    turn_on_fan()' },
+  { label: 'Go', lang: 'go', code: 'if 0.6*temperature+0.4*humidity > 75 {\n\tturnOnFan()\n}' },
+  { label: 'Java', lang: 'java', code: 'if (0.6 * temperature + 0.4 * humidity > 75) turnOnFan();' },
+]} />
 
 you've built one: a weighted sum of inputs compared against a threshold.
 That is a **neuron**, and it is the atom this entire site builds from.
@@ -25,9 +29,12 @@ compare the total against a threshold: cross it and the neuron fires.
 Rearrange it slightly and the threshold becomes a **bias** term `b` on the
 left-hand side, and the comparison is always against zero:
 
-```ts
-if (w1 * x1 + w2 * x2 + b > 0) fire();
-```
+<CodeTabs variants={[
+  { label: 'TypeScript', lang: 'ts', code: 'if (w1 * x1 + w2 * x2 + b > 0) fire();' },
+  { label: 'Python', lang: 'python', code: 'if w1 * x1 + w2 * x2 + b > 0:\n    fire()' },
+  { label: 'Go', lang: 'go', code: 'if w1*x1+w2*x2+b > 0 {\n\tfire()\n}' },
+  { label: 'Java', lang: 'java', code: 'if (w1 * x1 + w2 * x2 + b > 0) fire();' },
+]} />
 
 Why rearrange? Because now the decision has a *geometry*. The equation
 `w1·x1 + w2·x2 + b = 0` is a line. Everything on one side fires, everything
